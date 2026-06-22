@@ -91,17 +91,21 @@ The function code expects the binding to be named `DB`.
 
 ## 4. Apply The Database Migration
 
-Apply the SQL in:
+Apply the SQL files in:
 
 ```text
 migrations/0001_initial.sql
+migrations/0002_seed_agents.sql
 ```
 
-You can apply it from the Cloudflare dashboard SQL console, or with Wrangler once it is installed:
+You can apply them from the Cloudflare dashboard SQL console, or with Wrangler once it is installed:
 
 ```bash
 wrangler d1 execute iris-prod --file=migrations/0001_initial.sql --remote
+wrangler d1 execute iris-prod --file=migrations/0002_seed_agents.sql --remote
 ```
+
+The first migration creates the Iris tables. The second migration adds the starter agents used by the first prototype.
 
 ## 5. Add OpenAI Environment Variables
 
@@ -123,6 +127,20 @@ OPENAI_MODEL=gpt-5.5
 ```
 
 The API key must only be stored in Cloudflare, not in the browser code and not in GitHub.
+
+You can confirm whether the key is active by visiting:
+
+```text
+https://your-iris-pages-url.pages.dev/api/health
+```
+
+If `hasOpenAIKey` is `false`, check that `OPENAI_API_KEY` was added to the **production** Pages environment or add it with Wrangler:
+
+```bash
+wrangler pages secret put OPENAI_API_KEY --project-name iris
+```
+
+After changing Pages environment variables or secrets, redeploy the Pages project so the live function receives the new values.
 
 ## 6. Check The Health Endpoint
 
@@ -155,4 +173,3 @@ This first prototype is not yet an LTI tool. The next integration step is to add
 - Agent availability by course.
 
 The current app is intentionally small so the Pages deployment, D1 database, and AI call path can be verified first.
-
