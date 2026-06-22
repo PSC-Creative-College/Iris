@@ -50,17 +50,28 @@ export async function onRequestPost(context) {
     const agent = AGENTS[clean.agent] || AGENTS.brief;
     const resourceContext = await retrieveResourceContext(env, clean.agent, clean.message);
 
+    const provider = resolveProvider(env, clean.agent);
     let reply;
     let mode = "live";
-    const model = env.OPENAI_MODEL || "gpt-5.5";
 
-    if (!env.OPENAI_API_KEY) {
+    if (provider.mode === "demo") {
       mode = "demo";
-      reply = demoReply(agent, clean.message, resourceContext);
+      reply = demoReply(agent, clean.message, resourceContext, provider);
+    } else if (provider.provider === "openrouter") {
+      reply = await callOpenRouter({
+        apiKey: provider.apiKey,
+        model: provider.model,
+        fallbackModels: provider.fallbackModels,
+        agent,
+        message: clean.message,
+        history: clean.history,
+        resourceContext,
+        env
+      });
     } else {
       reply = await callOpenAI({
-        apiKey: env.OPENAI_API_KEY,
-        model,
+        apiKey: provider.apiKey,
+        model: provider.model,
         agent,
         message: clean.message,
         history: clean.history,
@@ -73,11 +84,17 @@ export async function onRequestPost(context) {
       agentKey: clean.agent,
       userMessage: clean.message,
       assistantMessage: reply,
-      model: mode === "demo" ? "demo" : model,
+      model: provider.model,
       mode
     });
 
-    return json({ reply, mode, conversationId: clean.conversationId });
+    return json({
+      reply,
+      mode,
+      provider: provider.provider,
+      model: provider.model,
+      conversationId: clean.conversationId
+    });
   } catch (error) {
     return json({ error: error.message || "Unable to process chat request." }, 400);
   }
@@ -142,6 +159,48 @@ async function callOpenAI({ apiKey, model, agent, message, history, resourceCont
   return extractOutputText(data);
 }
 
+async function callOpenRouter({
+  apiKey,
+  model,
+  fallbackModels,
+  agent,
+  message,
+  history,
+  resourceContext,
+  env
+}) {
+  const messages = buildChatMessages(history, message, resourceContext, agent);
+  const body = {
+    model,
+    messages,
+    temperature: Number(env.OPENROUTER_TEMPERATURE || "0.4")
+  };
+
+  if (fallbackModels.length > 0) {
+    body.models = [model, ...fallbackModels];
+  }
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": env.OPENROUTER_SITE_URL || "https://iris-7jo.pages.dev",
+      "X-Title": env.OPENROUTER_APP_TITLE || "Iris PSC AI Studio"
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const messageText =
+      data?.error?.message || `OpenRouter request failed with status ${response.status}.`;
+    throw new Error(messageText);
+  }
+
+  return extractChatCompletionText(data);
+}
+
 function buildTranscript(history, message, resourceContext = []) {
   const previous = history
     .slice(-8)
@@ -168,6 +227,40 @@ ${message}
 `.trim();
 }
 
+function buildChatMessages(history, message, resourceContext, agent) {
+  const resourceBlock = formatResourceContext(resourceContext);
+  const system = `${SYSTEM_INSTRUCTIONS}
+
+Active Iris agent: ${agent.name}
+Agent purpose: ${agent.purpose}
+
+Use teacher-uploaded resource context when it is relevant. If the context does not answer the question, say what is missing instead of inventing course details.
+
+Teacher-uploaded resource context:
+${resourceBlock}`;
+
+  const previous = history.slice(-8).map((item) => ({
+    role: item.role === "assistant" ? "assistant" : "user",
+    content: item.content
+  }));
+
+  return [
+    { role: "system", content: system },
+    ...previous,
+    { role: "user", content: message }
+  ];
+}
+
+function formatResourceContext(resourceContext = []) {
+  if (!resourceContext.length) {
+    return "No teacher-uploaded resource context matched this question.";
+  }
+
+  return resourceContext
+    .map((item, index) => `Resource ${index + 1}: ${item.title}\n${item.content}`)
+    .join("\n\n");
+}
+
 function extractOutputText(data) {
   if (typeof data?.output_text === "string" && data.output_text.trim()) {
     return data.output_text.trim();
@@ -189,7 +282,25 @@ function extractOutputText(data) {
   return joined;
 }
 
-function demoReply(agent, message, resourceContext = []) {
+function extractChatCompletionText(data) {
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === "string" && content.trim()) {
+    return content.trim();
+  }
+
+  if (Array.isArray(content)) {
+    const joined = content
+      .map((part) => part?.text || part?.content || "")
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    if (joined) return joined;
+  }
+
+  throw new Error("OpenRouter returned an empty response.");
+}
+
+function demoReply(agent, message, resourceContext = [], provider) {
   const contextLines = resourceContext.length
     ? [
         "",
@@ -204,7 +315,7 @@ function demoReply(agent, message, resourceContext = []) {
       ];
 
   return [
-    "Iris is running in demo mode because no OpenAI API key is configured yet.",
+    `Iris is running in demo mode because no ${provider.expectedSecret} is configured yet.`,
     "",
     `${agent.name}: ${agent.purpose}`,
     ...contextLines,
@@ -213,6 +324,47 @@ function demoReply(agent, message, resourceContext = []) {
     "",
     "A useful next move is to add the actual brief, rubric line, image description, or production constraint so Iris can give more specific formative guidance."
   ].join("\n");
+}
+
+function resolveProvider(env, agentKey) {
+  const requested = String(env.AI_PROVIDER || "").toLowerCase().trim();
+  const wantsOpenRouter = requested === "openrouter" || (!requested && env.OPENROUTER_API_KEY);
+
+  if (wantsOpenRouter) {
+    return {
+      provider: "openrouter",
+      mode: env.OPENROUTER_API_KEY ? "live" : "demo",
+      expectedSecret: "OPENROUTER_API_KEY",
+      apiKey: env.OPENROUTER_API_KEY,
+      model: resolveOpenRouterModel(env, agentKey),
+      fallbackModels: splitCsv(env.OPENROUTER_FALLBACK_MODELS)
+    };
+  }
+
+  return {
+    provider: "openai",
+    mode: env.OPENAI_API_KEY ? "live" : "demo",
+    expectedSecret: "OPENAI_API_KEY",
+    apiKey: env.OPENAI_API_KEY,
+    model: env.OPENAI_MODEL || "gpt-5.5",
+    fallbackModels: []
+  };
+}
+
+function resolveOpenRouterModel(env, agentKey) {
+  const suffix = String(agentKey || "brief").toUpperCase();
+  return (
+    env[`OPENROUTER_MODEL_${suffix}`] ||
+    env.OPENROUTER_MODEL ||
+    "openai/gpt-5.4-mini"
+  );
+}
+
+function splitCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 async function retrieveResourceContext(env, agentKey, message) {

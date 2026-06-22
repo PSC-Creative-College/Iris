@@ -1,6 +1,6 @@
 # Cloudflare Setup
 
-This guide sets up the first Iris prototype on Cloudflare Pages with an optional D1 database and OpenAI API key.
+This guide sets up the first Iris prototype on Cloudflare Pages with an optional D1 database and AI provider key.
 
 ## What Gets Deployed
 
@@ -15,7 +15,7 @@ migrations/
   D1 database schema
 ```
 
-The app works in demo mode before the OpenAI key and database are configured. Demo mode is useful for checking the interface and deployment path.
+The app works in demo mode before the model API key and database are configured. Demo mode is useful for checking the interface and deployment path.
 
 ## 1. Connect GitHub To Cloudflare Pages
 
@@ -109,7 +109,55 @@ wrangler d1 execute iris-prod --file=migrations/0003_teacher_resources.sql --rem
 
 The first migration creates the Iris tables. The second migration adds the starter agents used by the first prototype. The third migration adds searchable teacher-uploaded resource chunks.
 
-## 5. Add OpenAI Environment Variables
+## 5. Add AI Provider Environment Variables
+
+Iris can call OpenRouter or OpenAI directly. For PSC's pilot, OpenRouter is the recommended path because it lets Iris switch models without changing code.
+
+### Recommended OpenRouter Setup
+
+In the Iris Pages project:
+
+1. Open **Settings**.
+2. Open **Environment variables**.
+3. Add these production variables:
+
+```text
+AI_PROVIDER=openrouter
+OPENROUTER_MODEL=openai/gpt-5.4-mini
+OPENROUTER_SITE_URL=https://iris-7jo.pages.dev
+OPENROUTER_APP_TITLE=Iris PSC AI Studio
+```
+
+4. Add this as an encrypted secret:
+
+```text
+OPENROUTER_API_KEY
+```
+
+Optional per-agent model overrides:
+
+```text
+OPENROUTER_MODEL_BRIEF=openai/gpt-5.4-mini
+OPENROUTER_MODEL_TECHNICAL=openai/gpt-5.4-mini
+OPENROUTER_MODEL_CRITIQUE=openrouter/auto
+OPENROUTER_MODEL_CLIENT=openai/gpt-5.4-mini
+```
+
+Optional fallback models, tried if the primary model fails:
+
+```text
+OPENROUTER_FALLBACK_MODELS=openai/gpt-5.4,anthropic/claude-sonnet-4.5
+```
+
+For the pilot, keep `OPENROUTER_MODEL` fixed rather than using `openrouter/auto` everywhere. Fixed models make quality, cost, and debugging easier to understand.
+
+You can add the OpenRouter key with Wrangler:
+
+```bash
+wrangler pages secret put OPENROUTER_API_KEY --project-name iris
+```
+
+### Direct OpenAI Setup
 
 In the Iris Pages project:
 
@@ -144,6 +192,8 @@ wrangler pages secret put OPENAI_API_KEY --project-name iris
 
 After changing Pages environment variables or secrets, redeploy the Pages project so the live function receives the new values.
 
+For OpenRouter, check that `hasOpenRouterKey` is `true`.
+
 ## 6. Check The Health Endpoint
 
 After deployment, open:
@@ -158,12 +208,15 @@ Expected shape:
 {
   "ok": true,
   "service": "iris",
+  "provider": "openrouter",
+  "model": "openai/gpt-5.4-mini",
   "hasDatabase": true,
-  "hasOpenAIKey": true
+  "hasOpenAIKey": false,
+  "hasOpenRouterKey": true
 }
 ```
 
-If `hasDatabase` or `hasOpenAIKey` is false, the app can still load, but chat logging or live AI responses are not fully configured.
+If `hasDatabase`, `hasOpenAIKey`, or `hasOpenRouterKey` is false, the app can still load, but chat logging or live AI responses may not be fully configured. For OpenRouter, `hasOpenRouterKey` is the important one.
 
 ## 7. Moodle Later
 

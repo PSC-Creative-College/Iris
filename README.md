@@ -77,7 +77,8 @@ The repository now includes a first Cloudflare Pages prototype:
 - Teacher upload UI in `public/teacher/`.
 - Pages Functions API in `functions/api/`.
 - D1 starter schema in `migrations/0001_initial.sql`.
-- Demo mode when no `OPENAI_API_KEY` is configured.
+- OpenRouter or direct OpenAI model calls from the server.
+- Demo mode when no model API key is configured.
 
 Cloudflare Pages settings for the prototype:
 

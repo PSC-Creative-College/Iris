@@ -1,10 +1,23 @@
 export async function onRequestGet(context) {
+  const env = context.env;
+  const provider =
+    String(env.AI_PROVIDER || "").toLowerCase().trim() === "openrouter" ||
+    (!env.AI_PROVIDER && env.OPENROUTER_API_KEY)
+      ? "openrouter"
+      : "openai";
+
   return new Response(
     JSON.stringify({
       ok: true,
       service: "iris",
-      hasDatabase: Boolean(context.env.DB),
-      hasOpenAIKey: Boolean(context.env.OPENAI_API_KEY)
+      provider,
+      model:
+        provider === "openrouter"
+          ? env.OPENROUTER_MODEL || "openai/gpt-5.4-mini"
+          : env.OPENAI_MODEL || "gpt-5.5",
+      hasDatabase: Boolean(env.DB),
+      hasOpenAIKey: Boolean(env.OPENAI_API_KEY),
+      hasOpenRouterKey: Boolean(env.OPENROUTER_API_KEY)
     }),
     {
       headers: {
@@ -14,4 +27,3 @@ export async function onRequestGet(context) {
     }
   );
 }
-
