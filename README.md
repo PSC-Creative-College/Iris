@@ -74,6 +74,7 @@ The name fits PSC because it carries several useful meanings: the eye, the lens,
 The repository now includes a first Cloudflare Pages prototype:
 
 - Static student chat UI in `public/`.
+- Teacher upload UI in `public/teacher/`.
 - Pages Functions API in `functions/api/`.
 - D1 starter schema in `migrations/0001_initial.sql`.
 - Demo mode when no `OPENAI_API_KEY` is configured.

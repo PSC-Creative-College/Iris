@@ -48,6 +48,7 @@ export async function onRequestPost(context) {
     const body = await request.json();
     const clean = normalizeBody(body);
     const agent = AGENTS[clean.agent] || AGENTS.brief;
+    const resourceContext = await retrieveResourceContext(env, clean.agent, clean.message);
 
     let reply;
     let mode = "live";
@@ -55,14 +56,15 @@ export async function onRequestPost(context) {
 
     if (!env.OPENAI_API_KEY) {
       mode = "demo";
-      reply = demoReply(agent, clean.message);
+      reply = demoReply(agent, clean.message, resourceContext);
     } else {
       reply = await callOpenAI({
         apiKey: env.OPENAI_API_KEY,
         model,
         agent,
         message: clean.message,
-        history: clean.history
+        history: clean.history,
+        resourceContext
       });
     }
 
@@ -114,8 +116,8 @@ function normalizeBody(body) {
   };
 }
 
-async function callOpenAI({ apiKey, model, agent, message, history }) {
-  const transcript = buildTranscript(history, message);
+async function callOpenAI({ apiKey, model, agent, message, history, resourceContext }) {
+  const transcript = buildTranscript(history, message, resourceContext);
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -125,7 +127,7 @@ async function callOpenAI({ apiKey, model, agent, message, history }) {
     body: JSON.stringify({
       model,
       store: false,
-      instructions: `${SYSTEM_INSTRUCTIONS}\n\nActive Iris agent: ${agent.name}\nAgent purpose: ${agent.purpose}`,
+      instructions: `${SYSTEM_INSTRUCTIONS}\n\nActive Iris agent: ${agent.name}\nAgent purpose: ${agent.purpose}\n\nUse the teacher-uploaded resource context when it is relevant. If the context does not answer the question, say what is missing instead of inventing course details.`,
       input: transcript
     })
   });
@@ -140,15 +142,26 @@ async function callOpenAI({ apiKey, model, agent, message, history }) {
   return extractOutputText(data);
 }
 
-function buildTranscript(history, message) {
+function buildTranscript(history, message, resourceContext = []) {
   const previous = history
     .slice(-8)
     .map((item) => `${item.role === "assistant" ? "Iris" : "Student"}: ${item.content}`)
     .join("\n\n");
 
+  const contextBlock = resourceContext.length
+    ? resourceContext
+        .map((item, index) => {
+          return `Resource ${index + 1}: ${item.title}\n${item.content}`;
+        })
+        .join("\n\n")
+    : "No teacher-uploaded resource context matched this question.";
+
   return `
 Conversation so far:
 ${previous || "No previous messages."}
+
+Teacher-uploaded resource context:
+${contextBlock}
 
 Latest student message:
 ${message}
@@ -176,16 +189,119 @@ function extractOutputText(data) {
   return joined;
 }
 
-function demoReply(agent, message) {
+function demoReply(agent, message, resourceContext = []) {
+  const contextLines = resourceContext.length
+    ? [
+        "",
+        "Teacher-uploaded material I found:",
+        ...resourceContext.slice(0, 3).map((item) => {
+          return `- ${item.title}: ${item.content.slice(0, 220)}${item.content.length > 220 ? "..." : ""}`;
+        })
+      ]
+    : [
+        "",
+        "No teacher-uploaded material matched this question yet. Once teachers upload briefs, rubrics, or notes, Iris will use them here."
+      ];
+
   return [
     "Iris is running in demo mode because no OpenAI API key is configured yet.",
     "",
     `${agent.name}: ${agent.purpose}`,
+    ...contextLines,
     "",
     `For your prompt, I would start by separating the question into intent, constraints, evidence, and next action. You wrote: "${message.slice(0, 220)}${message.length > 220 ? "..." : ""}"`,
     "",
     "A useful next move is to add the actual brief, rubric line, image description, or production constraint so Iris can give more specific formative guidance."
   ].join("\n");
+}
+
+async function retrieveResourceContext(env, agentKey, message) {
+  if (!env.DB) return [];
+
+  const terms = importantTerms(message);
+  try {
+    if (terms.length) {
+      const conditions = terms.map(() => "lower(c.content) like ?").join(" or ");
+      const binds = [
+        agentKey,
+        ...terms.map((term) => `%${term}%`)
+      ];
+      const result = await env.DB.prepare(
+        `select
+          r.title,
+          r.agent_key as agentKey,
+          c.content
+        from resource_chunks c
+        join resources r on r.id = c.resource_id
+        where r.processing_status = 'ready'
+          and (r.agent_key = ? or r.agent_key is null)
+          and (${conditions})
+        order by r.created_at desc, c.chunk_index asc
+        limit 5`
+      )
+        .bind(...binds)
+        .all();
+
+      if (result.results?.length) return result.results;
+    }
+
+    const fallback = await env.DB.prepare(
+      `select
+        r.title,
+        r.agent_key as agentKey,
+        c.content
+      from resource_chunks c
+      join resources r on r.id = c.resource_id
+      where r.processing_status = 'ready'
+        and (r.agent_key = ? or r.agent_key is null)
+      order by r.created_at desc, c.chunk_index asc
+      limit 3`
+    )
+      .bind(agentKey)
+      .all();
+
+    return fallback.results || [];
+  } catch (error) {
+    console.warn("Iris resource retrieval failed", error);
+    return [];
+  }
+}
+
+function importantTerms(message) {
+  const stopWords = new Set([
+    "about",
+    "after",
+    "again",
+    "also",
+    "brief",
+    "could",
+    "from",
+    "have",
+    "help",
+    "into",
+    "need",
+    "should",
+    "that",
+    "their",
+    "there",
+    "this",
+    "what",
+    "when",
+    "where",
+    "which",
+    "with",
+    "would",
+    "your"
+  ]);
+
+  return [...new Set(
+    String(message || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length > 3 && !stopWords.has(term))
+  )].slice(0, 6);
 }
 
 async function logConversation(env, event) {
@@ -255,4 +371,3 @@ function corsHeaders() {
     "Access-Control-Allow-Headers": "Content-Type"
   };
 }
-

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iris Teacher Studio</title>
+    <meta name="description" content="Teacher resource uploads for Iris.">
+    <link rel="stylesheet" href="/teacher/teacher.css">
+  </head>
+  <body>
+    <main class="teacher-shell">
+      <header class="teacher-header">
+        <div>
+          <p class="eyebrow">PSC Creative College</p>
+          <h1>Iris Teacher Studio</h1>
+          <p class="lede">Upload briefs, rubrics, notes, and guide text that Iris can use when answering student questions.</p>
+        </div>
+        <a class="back-link" href="/">Student chat</a>
+      </header>
+
+      <section class="notice" id="authNotice">
+        Checking teacher access...
+      </section>
+
+      <section class="access-panel" id="accessPanel" hidden>
+        <div>
+          <h2>Teacher access</h2>
+          <p>
+            In production this page should be protected by Cloudflare Access. For temporary testing, set
+            <code>TEACHER_ACCESS_CODE</code> in Cloudflare and enter it here.
+          </p>
+        </div>
+        <form class="access-form" id="accessForm">
+          <label for="accessCode">Temporary access code</label>
+          <div class="inline-form">
+            <input id="accessCode" name="accessCode" type="password" autocomplete="off">
+            <button type="submit">Unlock</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="studio-grid" id="studioGrid" hidden>
+        <form class="upload-panel" id="uploadForm">
+          <div class="section-heading">
+            <p class="eyebrow">Upload</p>
+            <h2>Add teaching material</h2>
+          </div>
+
+          <label for="title">Resource title</label>
+          <input id="title" name="title" type="text" placeholder="Assessment 2 rubric">
+
+          <label for="agentKey">Use with agent</label>
+          <select id="agentKey" name="agentKey">
+            <option value="brief">Brief Decoder</option>
+            <option value="technical">Technical Tutor</option>
+            <option value="critique">Portfolio Coach</option>
+            <option value="client">Client Simulator</option>
+          </select>
+
+          <label for="file">File</label>
+          <input id="file" name="file" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" required>
+
+          <p class="helper-text">
+            Current prototype accepts text, Markdown, CSV, and JSON files under 450 KB. PDF and Word extraction are the next step.
+          </p>
+
+          <button class="primary-button" type="submit" id="uploadButton">Upload resource</button>
+        </form>
+
+        <section class="resource-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Resources</p>
+            <h2>Uploaded materials</h2>
+          </div>
+          <div class="resource-list" id="resourceList"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/teacher/teacher.js" defer></script>
+  </body>
+</html>
+

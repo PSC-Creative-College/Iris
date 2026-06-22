@@ -390,6 +390,11 @@ textarea:focus {
   margin-top: 12px;
 }
 
+.teacher-link {
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -469,4 +474,3 @@ textarea:focus {
     flex: 1;
   }
 }
-
