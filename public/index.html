@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iris | PSC AI Studio</title>
+    <meta name="description" content="Iris is PSC Creative College's AI studio for creative learning.">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="agent-rail" aria-label="Iris agents">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">I</div>
+          <div>
+            <p class="eyebrow">PSC Creative College</p>
+            <h1>Iris</h1>
+          </div>
+        </div>
+
+        <nav class="agent-list" aria-label="Available agents">
+          <button class="agent-button is-active" type="button" data-agent="brief">
+            <span>Brief Decoder</span>
+            <small>Assessment clarity</small>
+          </button>
+          <button class="agent-button" type="button" data-agent="technical">
+            <span>Technical Tutor</span>
+            <small>Studio and workflow</small>
+          </button>
+          <button class="agent-button" type="button" data-agent="critique">
+            <span>Portfolio Coach</span>
+            <small>Formative critique</small>
+          </button>
+          <button class="agent-button" type="button" data-agent="client">
+            <span>Client Simulator</span>
+            <small>Pitch practice</small>
+          </button>
+        </nav>
+
+        <div class="rail-art" aria-hidden="true">
+          <img src="/assets/iris-workspace.png" alt="">
+        </div>
+      </aside>
+
+      <main class="chat-workspace">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow" id="agentType">Assessment clarity</p>
+            <h2 id="agentName">Brief Decoder</h2>
+          </div>
+          <div class="status-cluster" aria-label="Service status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="serviceStatus">Ready</span>
+          </div>
+        </header>
+
+        <section class="message-panel" aria-label="Conversation">
+          <div class="messages" id="messages" aria-live="polite"></div>
+        </section>
+
+        <form class="composer" id="chatForm">
+          <label class="visually-hidden" for="messageInput">Message Iris</label>
+          <textarea id="messageInput" name="message" rows="3" placeholder="Ask Iris about your brief, concept, process, or technical problem."></textarea>
+          <div class="composer-actions">
+            <button class="secondary-button" type="button" id="clearChat">Clear</button>
+            <button class="primary-button" type="submit" id="sendButton">
+              <span>Send</span>
+            </button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="context-panel" aria-label="Course context">
+        <section class="context-section">
+          <p class="eyebrow">Current mode</p>
+          <h3 id="contextTitle">Assessment support</h3>
+          <p id="contextCopy">Iris can clarify requirements, translate rubric language, and help plan next steps without writing the assessment for the student.</p>
+        </section>
+
+        <section class="context-section">
+          <p class="eyebrow">Boundaries</p>
+          <ul class="compact-list">
+            <li>No final submissions</li>
+            <li>No automatic grades</li>
+            <li>Course material first</li>
+            <li>Teacher review later</li>
+          </ul>
+        </section>
+
+        <section class="context-section">
+          <p class="eyebrow">Try</p>
+          <div class="prompt-stack" id="promptStack"></div>
+        </section>
+      </aside>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
+

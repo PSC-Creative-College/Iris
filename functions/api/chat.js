@@ -1,0 +1,258 @@
+const AGENTS = {
+  brief: {
+    name: "Brief Decoder",
+    purpose:
+      "Help PSC students understand assessment briefs, rubrics, deliverables, constraints, and next steps without completing the work for them."
+  },
+  technical: {
+    name: "Technical Tutor",
+    purpose:
+      "Help PSC students reason through photography, studio, production, software, colour, print, and workflow problems."
+  },
+  critique: {
+    name: "Portfolio Coach",
+    purpose:
+      "Give formative creative critique through questions, trade-offs, revision paths, intent, audience, and rubric-aware feedback."
+  },
+  client: {
+    name: "Client Simulator",
+    purpose:
+      "Role-play a client, editor, producer, curator, or creative director so PSC students can practise professional communication."
+  }
+};
+
+const SYSTEM_INSTRUCTIONS = `
+You are Iris, PSC Creative College's AI studio for creative learning.
+
+You support students with creative thinking, critique, technical reasoning, reflective practice, and assessment clarification.
+
+Core rules:
+- Do not complete final assessment work for the student.
+- Do not give or predict grades.
+- Do not invent PSC policy, due dates, assessment rules, or course requirements.
+- Ask clarifying questions when the student's context is missing.
+- Give practical next steps that help the student think and revise.
+- Encourage the student to check assessment-critical decisions with their teacher.
+- Keep creative judgment human: offer options, trade-offs, and critique questions.
+- If a question involves wellbeing, safety, legal, medical, or formal complaints, direct the student to human support.
+`.trim();
+
+export async function onRequestOptions() {
+  return new Response(null, { headers: corsHeaders() });
+}
+
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  try {
+    const body = await request.json();
+    const clean = normalizeBody(body);
+    const agent = AGENTS[clean.agent] || AGENTS.brief;
+
+    let reply;
+    let mode = "live";
+    const model = env.OPENAI_MODEL || "gpt-5.5";
+
+    if (!env.OPENAI_API_KEY) {
+      mode = "demo";
+      reply = demoReply(agent, clean.message);
+    } else {
+      reply = await callOpenAI({
+        apiKey: env.OPENAI_API_KEY,
+        model,
+        agent,
+        message: clean.message,
+        history: clean.history
+      });
+    }
+
+    await logConversation(env, {
+      conversationId: clean.conversationId,
+      agentKey: clean.agent,
+      userMessage: clean.message,
+      assistantMessage: reply,
+      model: mode === "demo" ? "demo" : model,
+      mode
+    });
+
+    return json({ reply, mode, conversationId: clean.conversationId });
+  } catch (error) {
+    return json({ error: error.message || "Unable to process chat request." }, 400);
+  }
+}
+
+function normalizeBody(body) {
+  const message = String(body?.message || "").trim();
+  if (!message) {
+    throw new Error("Message is required.");
+  }
+
+  if (message.length > 6000) {
+    throw new Error("Message is too long for this prototype.");
+  }
+
+  const agent = String(body?.agent || "brief");
+  const conversationId = isUuid(body?.conversationId)
+    ? body.conversationId
+    : crypto.randomUUID();
+
+  const history = Array.isArray(body?.history)
+    ? body.history
+        .slice(-8)
+        .map((item) => ({
+          role: item?.role === "assistant" ? "assistant" : "user",
+          content: String(item?.content || "").slice(0, 3000)
+        }))
+        .filter((item) => item.content.trim())
+    : [];
+
+  return {
+    agent: AGENTS[agent] ? agent : "brief",
+    conversationId,
+    message,
+    history
+  };
+}
+
+async function callOpenAI({ apiKey, model, agent, message, history }) {
+  const transcript = buildTranscript(history, message);
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      store: false,
+      instructions: `${SYSTEM_INSTRUCTIONS}\n\nActive Iris agent: ${agent.name}\nAgent purpose: ${agent.purpose}`,
+      input: transcript
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const messageText =
+      data?.error?.message || `OpenAI request failed with status ${response.status}.`;
+    throw new Error(messageText);
+  }
+
+  return extractOutputText(data);
+}
+
+function buildTranscript(history, message) {
+  const previous = history
+    .slice(-8)
+    .map((item) => `${item.role === "assistant" ? "Iris" : "Student"}: ${item.content}`)
+    .join("\n\n");
+
+  return `
+Conversation so far:
+${previous || "No previous messages."}
+
+Latest student message:
+${message}
+`.trim();
+}
+
+function extractOutputText(data) {
+  if (typeof data?.output_text === "string" && data.output_text.trim()) {
+    return data.output_text.trim();
+  }
+
+  const text = [];
+  for (const item of data?.output || []) {
+    for (const content of item?.content || []) {
+      if (typeof content?.text === "string") {
+        text.push(content.text);
+      }
+    }
+  }
+
+  const joined = text.join("\n").trim();
+  if (!joined) {
+    throw new Error("OpenAI returned an empty response.");
+  }
+  return joined;
+}
+
+function demoReply(agent, message) {
+  return [
+    "Iris is running in demo mode because no OpenAI API key is configured yet.",
+    "",
+    `${agent.name}: ${agent.purpose}`,
+    "",
+    `For your prompt, I would start by separating the question into intent, constraints, evidence, and next action. You wrote: "${message.slice(0, 220)}${message.length > 220 ? "..." : ""}"`,
+    "",
+    "A useful next move is to add the actual brief, rubric line, image description, or production constraint so Iris can give more specific formative guidance."
+  ].join("\n");
+}
+
+async function logConversation(env, event) {
+  if (!env.DB) return;
+
+  try {
+    const now = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        "insert or ignore into conversations (id, agent_key, title, created_at, updated_at) values (?, ?, ?, ?, ?)"
+      ).bind(event.conversationId, event.agentKey, "Iris chat", now, now),
+      env.DB.prepare("update conversations set updated_at = ? where id = ?").bind(
+        now,
+        event.conversationId
+      ),
+      env.DB.prepare(
+        "insert into messages (id, conversation_id, role, content, model, mode, created_at) values (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(
+        crypto.randomUUID(),
+        event.conversationId,
+        "user",
+        event.userMessage,
+        null,
+        event.mode,
+        now
+      ),
+      env.DB.prepare(
+        "insert into messages (id, conversation_id, role, content, model, mode, created_at) values (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(
+        crypto.randomUUID(),
+        event.conversationId,
+        "assistant",
+        event.assistantMessage,
+        event.model,
+        event.mode,
+        now
+      )
+    ]);
+  } catch (error) {
+    console.warn("Iris database logging failed", error);
+  }
+}
+
+function isUuid(value) {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value
+    )
+  );
+}
+
+function json(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...corsHeaders(),
+      "Content-Type": "application/json; charset=utf-8"
+    }
+  });
+}
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+}
+

@@ -1,0 +1,11 @@
+{
+  "name": "iris",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check public/app.js && node --check functions/api/chat.js && node --check functions/api/health.js",
+    "serve": "python3 -m http.server 8788 -d public"
+  }
+}
+

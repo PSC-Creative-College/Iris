@@ -46,12 +46,47 @@ The name fits PSC because it carries several useful meanings: the eye, the lens,
 |-- ARCHITECTURE.md
 |-- PRIVACY_AND_SAFETY.md
 |-- CONTRIBUTING.md
+|-- .env.example
+|-- package.json
+|-- functions/
+|   `-- api/
+|       |-- chat.js
+|       `-- health.js
+|-- migrations/
+|   `-- 0001_initial.sql
+|-- public/
+|   |-- app.js
+|   |-- index.html
+|   |-- styles.css
+|   |-- _headers
+|   `-- assets/
+|       `-- iris-workspace.png
 `-- docs/
     |-- agent-examples.md
+    |-- cloudflare-setup.md
     |-- implementation-roadmap.md
     |-- moodle-integration.md
     `-- pilot-plan.md
 ```
+
+## Prototype
+
+The repository now includes a first Cloudflare Pages prototype:
+
+- Static student chat UI in `public/`.
+- Pages Functions API in `functions/api/`.
+- D1 starter schema in `migrations/0001_initial.sql`.
+- Demo mode when no `OPENAI_API_KEY` is configured.
+
+Cloudflare Pages settings for the prototype:
+
+```text
+Framework preset: None
+Build command: leave blank
+Build output directory: public
+```
+
+The live AI call runs server-side through `/api/chat`, so model API keys are not exposed to the browser.
 
 ## Recommended Build Shape
 
@@ -88,6 +123,7 @@ The first implementation should stay flexible. A practical stack could be:
 - [Architecture](./ARCHITECTURE.md)
 - [Privacy and Safety](./PRIVACY_AND_SAFETY.md)
 - [Moodle Integration](./docs/moodle-integration.md)
+- [Cloudflare Setup](./docs/cloudflare-setup.md)
 - [Pilot Plan](./docs/pilot-plan.md)
 - [Agent Examples](./docs/agent-examples.md)
 - [Implementation Roadmap](./docs/implementation-roadmap.md)
