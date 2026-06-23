@@ -408,14 +408,6 @@ textarea:focus {
   line-height: 1.5;
 }
 
-.compact-list {
-  display: grid;
-  gap: 8px;
-  margin: 12px 0 0;
-  padding-left: 18px;
-  color: var(--ink-soft);
-}
-
 .prompt-stack {
   display: grid;
   gap: 8px;
