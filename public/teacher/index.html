@@ -40,6 +40,30 @@
       </section>
 
       <section class="studio-grid" id="studioGrid" hidden>
+        <section class="moodle-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Moodle Sync</p>
+            <h2>Course materials</h2>
+          </div>
+
+          <div class="moodle-toolbar">
+            <label for="moodleAgentKey">Import for agent</label>
+            <select id="moodleAgentKey" name="moodleAgentKey">
+              <option value="assignment">Assignment Guide</option>
+              <option value="technical">Technical Tutor</option>
+              <option value="critique">Portfolio Coach</option>
+              <option value="client">Client Simulator</option>
+            </select>
+            <button class="secondary-button" type="button" id="moodleScanButton">Scan course</button>
+            <button class="primary-button" type="button" id="moodleImportButton" disabled>Import selected</button>
+          </div>
+
+          <p class="helper-text" id="moodleStatus">
+            Scan the trial Moodle course, then choose the materials Iris should use.
+          </p>
+          <div class="moodle-list" id="moodleItemList"></div>
+        </section>
+
         <form class="upload-panel" id="uploadForm">
           <div class="section-heading">
             <p class="eyebrow">Upload</p>

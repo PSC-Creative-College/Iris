@@ -267,3 +267,31 @@ wrangler pages secret put TEACHER_ACCESS_CODE --project-name iris
 Then redeploy the Pages project. The `/teacher/` page will accept that code and store it only in the current browser session.
 
 The upload area accepts `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files under 8 MB. Legacy `.doc` files should be saved as `.docx` first. Scanned or image-only PDFs need OCR before Iris can read them.
+
+## 9. Moodle Course Sync
+
+For the first Moodle sync trial, Iris needs a Moodle Web Services token for a limited Moodle user enrolled only in the test course.
+
+Cloudflare production variables:
+
+```text
+MOODLE_BASE_URL=https://psc.trainingvc.com.au
+MOODLE_COURSE_ID=3308
+```
+
+Cloudflare production secret:
+
+```text
+MOODLE_API_TOKEN
+```
+
+The Moodle service should include at least:
+
+```text
+core_webservice_get_site_info
+core_course_get_contents
+```
+
+Teacher Studio can then scan the configured Moodle course, show importable activities/files, and import selected materials into the same searchable Iris resource store used by manual uploads.
+
+If Moodle returns `Course or activity not accessible`, the token works but the Moodle user cannot see the configured course. Enrol the service user in the course and give it a role that can view course content, then scan again.

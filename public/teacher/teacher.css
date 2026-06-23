@@ -88,6 +88,7 @@ h2 {
 
 .back-link,
 .primary-button,
+.secondary-button,
 .inline-form button,
 .delete-button {
   display: inline-flex;
@@ -107,8 +108,16 @@ h2 {
   color: var(--ink);
 }
 
+.secondary-button {
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
 .notice,
 .access-panel,
+.moodle-panel,
 .upload-panel,
 .resource-panel {
   margin-top: 24px;
@@ -212,7 +221,8 @@ select:focus {
   outline: none;
 }
 
-.primary-button:disabled {
+.primary-button:disabled,
+.secondary-button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
 }
@@ -224,7 +234,12 @@ select:focus {
   align-items: start;
 }
 
+.moodle-panel {
+  grid-column: 1 / -1;
+}
+
 .upload-panel,
+.moodle-panel,
 .resource-panel {
   padding: 22px;
 }
@@ -236,6 +251,48 @@ select:focus {
 .helper-text {
   margin: 2px 0 8px;
   font-size: 14px;
+}
+
+.moodle-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(180px, 260px) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.moodle-toolbar label {
+  align-self: center;
+}
+
+.moodle-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.moodle-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #faf7ef;
+}
+
+.moodle-check {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  font-size: 15px;
+}
+
+.moodle-check input {
+  width: 18px;
+  min-height: 18px;
+  margin: 2px 0 0;
+  padding: 0;
 }
 
 .resource-list {
@@ -301,7 +358,8 @@ select:focus {
 @media (max-width: 840px) {
   .teacher-header,
   .access-panel,
-  .studio-grid {
+  .studio-grid,
+  .moodle-toolbar {
     grid-template-columns: 1fr;
   }
 
@@ -332,4 +390,3 @@ select:focus {
     justify-self: start;
   }
 }
-

@@ -18,6 +18,8 @@ export async function onRequestGet({ request, env }) {
       r.id,
       r.title,
       r.agent_key as agentKey,
+      r.source_type as sourceType,
+      r.storage_url as storageUrl,
       r.file_name as fileName,
       r.mime_type as mimeType,
       r.byte_size as byteSize,
@@ -27,7 +29,7 @@ export async function onRequestGet({ request, env }) {
       count(c.id) as chunks
     from resources r
     left join resource_chunks c on c.resource_id = r.id
-    where r.source_type = 'upload'
+    where r.source_type in ('upload', 'moodle')
     group by r.id
     order by r.created_at desc
     limit 100`
@@ -155,7 +157,7 @@ export async function onRequestDelete({ request, env }) {
 
   await env.DB.batch([
     env.DB.prepare("delete from resource_chunks where resource_id = ?").bind(id),
-    env.DB.prepare("delete from resources where id = ? and source_type = 'upload'").bind(id)
+    env.DB.prepare("delete from resources where id = ? and source_type in ('upload', 'moodle')").bind(id)
   ]);
 
   return json({ deleted: true, id });

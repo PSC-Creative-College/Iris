@@ -17,7 +17,10 @@ export async function onRequestGet(context) {
           : env.OPENAI_MODEL || "gpt-5.5",
       hasDatabase: Boolean(env.DB),
       hasOpenAIKey: Boolean(env.OPENAI_API_KEY),
-      hasOpenRouterKey: Boolean(env.OPENROUTER_API_KEY)
+      hasOpenRouterKey: Boolean(env.OPENROUTER_API_KEY),
+      hasMoodleBaseUrl: Boolean(env.MOODLE_BASE_URL),
+      hasMoodleCourseId: Boolean(env.MOODLE_COURSE_ID),
+      hasMoodleApiToken: Boolean(env.MOODLE_API_TOKEN)
     }),
     {
       headers: {

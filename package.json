@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check public/app.js && node --check public/teacher/teacher.js && node --check functions/_shared/auth.js && node --check functions/_shared/document-text.js && node --check functions/api/chat.js && node --check functions/api/health.js && node --check functions/api/teacher/session.js && node --check functions/api/teacher/resources.js",
+    "check": "node --check public/app.js && node --check public/teacher/teacher.js && node --check functions/_shared/auth.js && node --check functions/_shared/document-text.js && node --check functions/api/chat.js && node --check functions/api/health.js && node --check functions/api/teacher/session.js && node --check functions/api/teacher/resources.js && node --check functions/api/teacher/moodle.js",
     "serve": "python3 -m http.server 8788 -d public"
   },
   "dependencies": {

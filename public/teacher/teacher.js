@@ -1,6 +1,7 @@
 const state = {
   token: sessionStorage.getItem("irisTeacherAccessCode") || "",
-  authenticated: false
+  authenticated: false,
+  moodleItems: []
 };
 
 const authNotice = document.querySelector("#authNotice");
@@ -10,6 +11,11 @@ const studioGrid = document.querySelector("#studioGrid");
 const uploadForm = document.querySelector("#uploadForm");
 const uploadButton = document.querySelector("#uploadButton");
 const resourceList = document.querySelector("#resourceList");
+const moodleAgentKey = document.querySelector("#moodleAgentKey");
+const moodleScanButton = document.querySelector("#moodleScanButton");
+const moodleImportButton = document.querySelector("#moodleImportButton");
+const moodleStatus = document.querySelector("#moodleStatus");
+const moodleItemList = document.querySelector("#moodleItemList");
 
 const AGENT_LABELS = {
   assignment: "Assignment Guide",
@@ -98,6 +104,7 @@ async function loadResources() {
       const meta = document.createElement("p");
       meta.className = "resource-meta";
       meta.textContent = [
+        resource.sourceType === "moodle" ? "Moodle" : "Upload",
         resource.fileName || "Text resource",
         `${resource.chunks || 0} chunks`,
         resource.uploadedBy || "unknown teacher",
@@ -126,6 +133,126 @@ async function deleteResource(id, title) {
   });
   setNotice(`Deleted "${title}".`, "good");
   await loadResources();
+}
+
+function setMoodleStatus(message) {
+  moodleStatus.textContent = message;
+}
+
+async function scanMoodleCourse() {
+  moodleScanButton.disabled = true;
+  moodleImportButton.disabled = true;
+  moodleItemList.replaceChildren();
+  setMoodleStatus("Scanning Moodle course...");
+
+  try {
+    const data = await api("/api/teacher/moodle");
+    state.moodleItems = data.items || [];
+    renderMoodleItems();
+    const importableCount = state.moodleItems.filter((item) => !item.imported).length;
+    setMoodleStatus(
+      `Found ${state.moodleItems.length} importable items in course ${data.courseId}. ${importableCount} not yet imported.`
+    );
+  } catch (error) {
+    state.moodleItems = [];
+    renderMoodleItems();
+    setMoodleStatus(error.message);
+  } finally {
+    moodleScanButton.disabled = false;
+    updateMoodleImportButton();
+  }
+}
+
+function renderMoodleItems() {
+  if (!state.moodleItems.length) {
+    moodleItemList.innerHTML =
+      "<p class=\"empty-state\">No Moodle items found yet.</p>";
+    updateMoodleImportButton();
+    return;
+  }
+
+  moodleItemList.replaceChildren(
+    ...state.moodleItems.map((item) => {
+      const row = document.createElement("article");
+      row.className = "moodle-item";
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.value = item.id;
+      check.disabled = Boolean(item.imported);
+      check.addEventListener("change", updateMoodleImportButton);
+
+      const title = document.createElement("p");
+      title.className = "resource-title";
+      title.textContent = item.title;
+
+      const meta = document.createElement("p");
+      meta.className = "resource-meta";
+      meta.textContent = [
+        moodleKindLabel(item.kind),
+        item.sectionName,
+        item.moduleType,
+        item.byteSize ? formatBytes(item.byteSize) : "",
+        item.imported ? "Imported" : "Ready"
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
+      const label = document.createElement("label");
+      label.className = "moodle-check";
+      label.append(check, title);
+
+      row.append(label, meta);
+      return row;
+    })
+  );
+
+  updateMoodleImportButton();
+}
+
+function selectedMoodleItemIds() {
+  return Array.from(moodleItemList.querySelectorAll("input[type='checkbox']:checked"))
+    .map((input) => input.value)
+    .filter(Boolean);
+}
+
+function updateMoodleImportButton() {
+  moodleImportButton.disabled = selectedMoodleItemIds().length === 0;
+}
+
+async function importSelectedMoodleItems() {
+  const itemIds = selectedMoodleItemIds();
+  if (!itemIds.length) return;
+
+  moodleScanButton.disabled = true;
+  moodleImportButton.disabled = true;
+  moodleImportButton.textContent = "Importing...";
+  setMoodleStatus(`Importing ${itemIds.length} Moodle item${itemIds.length === 1 ? "" : "s"}...`);
+
+  try {
+    const data = await api("/api/teacher/moodle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        itemIds,
+        agentKey: moodleAgentKey.value
+      })
+    });
+
+    setNotice(`Imported ${data.imported.length} Moodle item${data.imported.length === 1 ? "" : "s"}.`, "good");
+    setMoodleStatus(
+      `Imported ${data.imported.length}; skipped ${data.skipped.length}.`
+    );
+    await loadResources();
+    await scanMoodleCourse();
+  } catch (error) {
+    setMoodleStatus(error.message);
+    setNotice(error.message, "error");
+  } finally {
+    moodleScanButton.disabled = false;
+    moodleImportButton.textContent = "Import selected";
+    updateMoodleImportButton();
+  }
 }
 
 accessForm.addEventListener("submit", async (event) => {
@@ -166,6 +293,9 @@ uploadForm.addEventListener("submit", async (event) => {
   }
 });
 
+moodleScanButton.addEventListener("click", scanMoodleCourse);
+moodleImportButton.addEventListener("click", importSelectedMoodleItems);
+
 function formatDate(value) {
   if (!value) return "unknown date";
   return new Intl.DateTimeFormat(undefined, {
@@ -175,6 +305,24 @@ function formatDate(value) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function moodleKindLabel(kind) {
+  const labels = {
+    activity: "Activity",
+    file: "File",
+    link: "Link",
+    section: "Section"
+  };
+  return labels[kind] || "Moodle";
 }
 
 checkSession();
