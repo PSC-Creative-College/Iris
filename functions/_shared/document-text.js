@@ -8,6 +8,7 @@ const TEXT_MIME_TYPES = new Set(["application/json", "text/markdown", "text/csv"
 
 const PDF_STREAM = asciiBytes("stream");
 const PDF_END_STREAM = asciiBytes("endstream");
+let pdfJsModulePromise = null;
 
 export async function extractReadableText(file, fileName, mimeType) {
   const kind = getUploadFileKind(fileName, mimeType);
@@ -107,7 +108,121 @@ function decodeXmlEntities(value) {
     .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
 }
 
-function extractPdfText(bytes) {
+async function extractPdfText(bytes) {
+  const pdfJsText = await extractPdfTextWithPdfJs(bytes);
+  if (pdfJsText.trim()) return pdfJsText;
+
+  const simpleText = extractSimplePdfText(bytes);
+  if (simpleText.trim()) return simpleText;
+
+  throw new Error(
+    "Iris could not find selectable text in this PDF. If it is scanned or image-only, run OCR or upload a .docx/.txt version."
+  );
+}
+
+async function extractPdfTextWithPdfJs(bytes) {
+  try {
+    const { getDocument } = await loadPdfJs();
+    const loadingTask = getDocument({
+      data: bytes,
+      disableFontFace: true,
+      disableRange: true,
+      disableStream: true,
+      disableWorker: true,
+      isEvalSupported: false,
+      useWorkerFetch: false
+    });
+    const pdf = await loadingTask.promise;
+    const pages = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent({
+        disableNormalization: false,
+        includeMarkedContent: false
+      });
+      const pageText = textContent.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ")
+        .replace(/[ \t]{2,}/g, " ")
+        .trim();
+
+      if (pageText) pages.push(pageText);
+      page.cleanup();
+    }
+
+    await pdf.destroy();
+    return pages.join("\n\n");
+  } catch (error) {
+    console.warn("Iris PDF.js extraction failed", error?.message || error);
+    return "";
+  }
+}
+
+async function loadPdfJs() {
+  ensurePromiseWithResolvers();
+  ensurePdfJsGeometryPolyfills();
+  pdfJsModulePromise ||= Promise.all([
+    import("pdfjs-dist/legacy/build/pdf.mjs"),
+    import("pdfjs-dist/legacy/build/pdf.worker.mjs")
+  ]).then(([pdfJs, worker]) => {
+    globalThis.pdfjsWorker ||= worker;
+    return pdfJs;
+  });
+  return pdfJsModulePromise;
+}
+
+function ensurePromiseWithResolvers() {
+  if (!Promise.withResolvers) {
+    Promise.withResolvers = () => {
+      let resolve;
+      let reject;
+      const promise = new Promise((innerResolve, innerReject) => {
+        resolve = innerResolve;
+        reject = innerReject;
+      });
+      return { promise, resolve, reject };
+    };
+  }
+}
+
+function ensurePdfJsGeometryPolyfills() {
+  if (!globalThis.DOMMatrix) {
+    globalThis.DOMMatrix = class DOMMatrix {
+      constructor(init = [1, 0, 0, 1, 0, 0]) {
+        const values = Array.isArray(init) || ArrayBuffer.isView(init) ? init : [1, 0, 0, 1, 0, 0];
+        this.a = Number(values[0] ?? 1);
+        this.b = Number(values[1] ?? 0);
+        this.c = Number(values[2] ?? 0);
+        this.d = Number(values[3] ?? 1);
+        this.e = Number(values[4] ?? 0);
+        this.f = Number(values[5] ?? 0);
+      }
+
+      multiplySelf() {
+        return this;
+      }
+
+      preMultiplySelf() {
+        return this;
+      }
+
+      translate() {
+        return this;
+      }
+
+      scale() {
+        return this;
+      }
+
+      invertSelf() {
+        return this;
+      }
+    };
+  }
+}
+
+function extractSimplePdfText(bytes) {
   const chunks = [];
   let searchFrom = 0;
 
@@ -144,14 +259,7 @@ function extractPdfText(bytes) {
     if (text.trim()) chunks.push(text);
   }
 
-  const text = chunks.join("\n\n");
-  if (!text.trim()) {
-    throw new Error(
-      "Iris could not find selectable text in this PDF. If it is scanned or image-only, run OCR or upload a .docx/.txt version."
-    );
-  }
-
-  return text;
+  return chunks.join("\n\n");
 }
 
 function readPdfStreamDictionary(bytes, streamIndex) {

@@ -292,6 +292,8 @@ core_webservice_get_site_info
 core_course_get_contents
 ```
 
+In the external service settings, also allow the service to download files. Without file downloads enabled, Moodle can list PDFs in `core_course_get_contents` but will return an `Access control exception` when Iris tries to import the actual PDF bytes.
+
 Teacher Studio can then scan the configured Moodle course, show importable activities/files, and import selected materials into the same searchable Iris resource store used by manual uploads.
 
 If Moodle returns `Course or activity not accessible`, the token works but the Moodle user cannot see the configured course. Enrol the service user in the course and give it a role that can view course content, then scan again.

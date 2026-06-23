@@ -8,6 +8,7 @@
     "serve": "python3 -m http.server 8788 -d public"
   },
   "dependencies": {
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "pdfjs-dist": "^5.4.449"
   }
 }

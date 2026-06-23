@@ -242,6 +242,7 @@ async function getMoodleItemText(env, item) {
   }
 
   const mimeType = item.mimeType || response.headers.get("Content-Type") || guessMimeType(item.fileName);
+  validateDownloadedMoodleFile(buffer, item, mimeType, response.headers.get("Content-Type"));
   const file = new File([buffer], item.fileName || item.title, { type: mimeType });
   const text = await extractReadableText(file, file.name, mimeType);
 
@@ -251,6 +252,34 @@ async function getMoodleItemText(env, item) {
     mimeType,
     byteSize: buffer.byteLength
   };
+}
+
+function validateDownloadedMoodleFile(buffer, item, mimeType, responseContentType) {
+  const kind = getUploadFileKind(item.fileName || item.title, mimeType);
+  if (kind !== "pdf") return;
+
+  const bytes = new Uint8Array(buffer.slice(0, 160));
+  const header = new TextDecoder().decode(bytes);
+  if (header.startsWith("%PDF-")) return;
+
+  const trimmed = header.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (data?.errorcode === "accessexception" || /access/i.test(data?.error || "")) {
+        throw new Error(
+          `Moodle blocked file download for "${item.title}". In the Iris Course Sync external service, enable file downloads and confirm the iris-sync user can access this file.`
+        );
+      }
+    } catch (error) {
+      if (error.message?.startsWith("Moodle blocked")) throw error;
+    }
+  }
+
+  const preview = trimmed.replace(/\s+/g, " ").slice(0, 100);
+  throw new Error(
+    `Moodle returned ${responseContentType || mimeType || "a non-PDF response"} instead of PDF bytes for "${item.title}". ${preview ? `Response starts: ${preview}` : ""}`
+  );
 }
 
 async function storeMoodleResource(env, data) {
