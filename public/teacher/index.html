@@ -58,10 +58,10 @@
           </select>
 
           <label for="file">File</label>
-          <input id="file" name="file" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown,text/csv,application/json" required>
+          <input id="file" name="file" type="file" accept=".txt,.md,.csv,.json,.docx,.pdf,text/plain,text/markdown,text/csv,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" required>
 
           <p class="helper-text">
-            Current prototype accepts text, Markdown, CSV, and JSON files under 450 KB. PDF and Word extraction are the next step.
+            Upload text, Markdown, CSV, JSON, Word .docx, or text-based PDF files under 8 MB. Scanned PDFs need OCR first.
           </p>
 
           <button class="primary-button" type="submit" id="uploadButton">Upload resource</button>
@@ -80,4 +80,3 @@
     <script src="/teacher/teacher.js" defer></script>
   </body>
 </html>
-

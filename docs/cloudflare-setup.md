@@ -264,4 +264,4 @@ wrangler pages secret put TEACHER_ACCESS_CODE --project-name iris
 
 Then redeploy the Pages project. The `/teacher/` page will accept that code and store it only in the current browser session.
 
-The current upload prototype accepts `.txt`, `.md`, `.csv`, and `.json` files under 450 KB. PDF and Word extraction should be added after the basic teacher workflow is tested.
+The upload area accepts `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files under 8 MB. Legacy `.doc` files should be saved as `.docx` first. Scanned or image-only PDFs need OCR before Iris can read them.

@@ -1,7 +1,8 @@
 import { json, requireTeacher } from "../../_shared/auth.js";
+import { extractReadableText, getUploadFileKind } from "../../_shared/document-text.js";
 
 const AGENT_KEYS = new Set(["brief", "technical", "critique", "client"]);
-const MAX_TEXT_BYTES = 450_000;
+const MAX_UPLOAD_BYTES = 8_000_000;
 
 export async function onRequestGet({ request, env }) {
   const { response } = requireTeacher(request, env);
@@ -45,23 +46,30 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Choose a text file to upload." }, 400);
   }
 
-  if (file.size > MAX_TEXT_BYTES) {
-    return json({ error: "For this prototype, upload text files under 450 KB." }, 400);
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return json({ error: "Upload teaching files under 8 MB." }, 400);
   }
 
   const fileName = file.name || "uploaded-resource.txt";
   const mimeType = file.type || guessMimeType(fileName);
-  if (!isSupportedTextFile(fileName, mimeType)) {
+  const fileKind = getUploadFileKind(fileName, mimeType);
+  if (fileKind === "unsupported") {
     return json(
       {
         error:
-          "This first version accepts .txt, .md, .csv, and .json files. PDF and Word extraction are planned next."
+          "Iris accepts .txt, .md, .csv, .json, .docx, and text-based .pdf files."
       },
       400
     );
   }
 
-  const rawText = await file.text();
+  let rawText;
+  try {
+    rawText = await extractReadableText(file, fileName, mimeType);
+  } catch (error) {
+    return json({ error: error.message || "Iris could not read that file." }, 400);
+  }
+
   const cleanText = normalizeText(rawText);
   if (cleanText.length < 20) {
     return json({ error: "The uploaded file does not contain enough readable text." }, 400);
@@ -159,19 +167,12 @@ function guessMimeType(fileName) {
   if (lower.endsWith(".md")) return "text/markdown";
   if (lower.endsWith(".csv")) return "text/csv";
   if (lower.endsWith(".json")) return "application/json";
+  if (lower.endsWith(".docx")) {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  if (lower.endsWith(".doc")) return "application/msword";
+  if (lower.endsWith(".pdf")) return "application/pdf";
   return "text/plain";
-}
-
-function isSupportedTextFile(fileName, mimeType) {
-  const lower = fileName.toLowerCase();
-  return (
-    lower.endsWith(".txt") ||
-    lower.endsWith(".md") ||
-    lower.endsWith(".csv") ||
-    lower.endsWith(".json") ||
-    mimeType.startsWith("text/") ||
-    mimeType === "application/json"
-  );
 }
 
 function normalizeText(value) {
@@ -219,4 +220,3 @@ function countWords(text) {
 function stripExtension(fileName) {
   return fileName.replace(/\.[^.]+$/, "");
 }
-

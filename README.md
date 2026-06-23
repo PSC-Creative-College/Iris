@@ -78,6 +78,7 @@ The repository now includes a first Cloudflare Pages prototype:
 - Pages Functions API in `functions/api/`.
 - D1 starter schema in `migrations/0001_initial.sql`.
 - OpenRouter or direct OpenAI model calls from the server.
+- Teacher resource uploads for text, Markdown, CSV, JSON, Word `.docx`, and text-based PDF files.
 - Demo mode when no model API key is configured.
 
 Cloudflare Pages settings for the prototype:
