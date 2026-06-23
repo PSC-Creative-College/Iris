@@ -12,7 +12,8 @@ const uploadButton = document.querySelector("#uploadButton");
 const resourceList = document.querySelector("#resourceList");
 
 const AGENT_LABELS = {
-  brief: "Brief Decoder",
+  assignment: "Assignment Guide",
+  brief: "Assignment Guide",
   technical: "Technical Tutor",
   critique: "Portfolio Coach",
   client: "Client Simulator"
@@ -74,7 +75,7 @@ async function loadResources() {
 
   if (!resources.length) {
     resourceList.innerHTML =
-      "<p class=\"empty-state\">No uploaded materials yet. Add a brief, rubric, or notes file to start grounding Iris.</p>";
+      "<p class=\"empty-state\">No uploaded materials yet. Add an assignment, rubric, or notes file to start grounding Iris.</p>";
     return;
   }
 
@@ -177,4 +178,3 @@ function formatDate(value) {
 }
 
 checkSession();
-

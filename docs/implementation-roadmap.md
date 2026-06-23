@@ -113,7 +113,7 @@ At this stage, Moodle integration can be simulated if needed. The goal is to val
 
 ### Templates
 
-- Brief Decoder.
+- Assignment Guide.
 - Technical Tutor.
 - Portfolio Critique Coach.
 - Client Simulator.
@@ -235,4 +235,3 @@ Minimum monitoring:
 - Teacher can review flagged conversations.
 - Cost limits or alerts are configured.
 - Basic support instructions exist.
-

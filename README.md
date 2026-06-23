@@ -15,13 +15,13 @@ The name fits PSC because it carries several useful meanings: the eye, the lens,
 - Launch AI tools from Moodle courses using LTI 1.3 or a staged integration path.
 - Provide student-facing chat and creative support agents.
 - Let teachers create and manage course-specific agents.
-- Ground AI responses in approved PSC resources, briefs, rubrics, policies, and examples.
+- Ground AI responses in approved PSC resources, assignments, rubrics, policies, and examples.
 - Store conversation history, usage, safety flags, and feedback in a separate Iris database.
 - Give staff enough analytics to understand common questions, confusing assessment areas, and student support needs.
 
 ## What Iris Should Do
 
-- Explain assessment briefs and rubrics without completing the student's work.
+- Explain assignments and rubrics without completing the student's work.
 - Help students practise creative decision-making.
 - Give formative critique against teacher-approved criteria.
 - Support technical learning in photography, lighting, digital imaging, screen media, design, and production workflows.

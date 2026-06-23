@@ -1,7 +1,11 @@
 import { json, requireTeacher } from "../../_shared/auth.js";
 import { extractReadableText, getUploadFileKind } from "../../_shared/document-text.js";
 
-const AGENT_KEYS = new Set(["brief", "technical", "critique", "client"]);
+const AGENT_KEYS = new Set(["assignment", "technical", "critique", "client"]);
+const AGENT_ALIASES = {
+  brief: "assignment"
+};
+const DEFAULT_AGENT_KEY = "assignment";
 const MAX_UPLOAD_BYTES = 8_000_000;
 
 export async function onRequestGet({ request, env }) {
@@ -158,8 +162,9 @@ export async function onRequestDelete({ request, env }) {
 }
 
 function normalizeAgentKey(value) {
-  const key = String(value || "brief").trim();
-  return AGENT_KEYS.has(key) ? key : "brief";
+  const raw = String(value || DEFAULT_AGENT_KEY).trim().toLowerCase();
+  const key = AGENT_ALIASES[raw] || raw;
+  return AGENT_KEYS.has(key) ? key : DEFAULT_AGENT_KEY;
 }
 
 function guessMimeType(fileName) {

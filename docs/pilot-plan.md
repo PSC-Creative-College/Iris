@@ -28,7 +28,7 @@ The pilot should test whether Iris improves student learning support and teacher
 
 Choose courses where:
 
-- Assessment briefs generate repeated questions.
+- Assignment requirements generate repeated questions.
 - Students need formative critique.
 - Technical workflows create common blockers.
 - Teachers are interested in shaping AI use.
@@ -46,7 +46,7 @@ Potential areas:
 
 Start with:
 
-- Brief Decoder.
+- Assignment Guide.
 - Technical Tutor.
 - Portfolio Critique Coach.
 - Client Simulator.
@@ -61,7 +61,7 @@ Avoid too many agents at the start. A small number of well-tuned agents will tea
 - Confirm pilot courses and staff.
 - Confirm privacy notice and student communication.
 - Confirm Moodle access path.
-- Collect course resources, briefs, rubrics, and support links.
+- Collect course resources, assignments, rubrics, and support links.
 - Draft agent instructions.
 - Test each agent internally.
 
@@ -173,4 +173,3 @@ The pilot is not successful if:
 - Weekly review notes.
 - End-of-pilot report.
 - Recommendation for next stage.
-

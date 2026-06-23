@@ -1,17 +1,17 @@
 const AGENTS = {
-  brief: {
-    name: "Brief Decoder",
+  assignment: {
+    name: "Assignment Guide",
     type: "Assessment clarity",
     contextTitle: "Assessment support",
     contextCopy:
-      "Iris can clarify requirements, translate rubric language, and help plan next steps without writing the assessment for the student.",
+      "Iris can clarify assignment requirements, translate rubric language, and help plan next steps without writing the work for the student.",
     prompts: [
-      "What does this brief mean by visual coherence?",
+      "What does this assignment mean by visual coherence?",
       "Help me turn this rubric into a project checklist.",
-      "What questions should I ask my teacher before I start?"
+      "Does my project idea fit the assignment?"
     ],
     opener:
-      "I can help unpack an assessment brief, rubric, or project requirement. Paste the part that feels unclear and I will help you reason through it."
+      "I can help unpack an assignment, rubric, or project requirement. Paste the part that feels unclear and I will help you reason through it."
   },
   technical: {
     name: "Technical Tutor",
@@ -58,7 +58,7 @@ const AGENTS = {
 };
 
 const state = {
-  agent: "brief",
+  agent: "assignment",
   conversationId: crypto.randomUUID(),
   history: []
 };
@@ -196,4 +196,3 @@ clearButton.addEventListener("click", resetConversation);
 
 renderAgent();
 resetConversation();
-

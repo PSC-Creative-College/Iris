@@ -137,11 +137,13 @@ OPENROUTER_API_KEY
 Optional per-agent model overrides:
 
 ```text
-OPENROUTER_MODEL_BRIEF=openai/gpt-5.4-mini
+OPENROUTER_MODEL_ASSIGNMENT=openai/gpt-5.4-mini
 OPENROUTER_MODEL_TECHNICAL=openai/gpt-5.4-mini
 OPENROUTER_MODEL_CRITIQUE=openrouter/auto
 OPENROUTER_MODEL_CLIENT=openai/gpt-5.4-mini
 ```
+
+Older deployments may still have `OPENROUTER_MODEL_BRIEF`; Iris keeps reading it as a fallback for the renamed Assignment Guide agent.
 
 Optional fallback models, tried if the primary model fails:
 
