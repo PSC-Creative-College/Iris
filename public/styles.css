@@ -264,10 +264,42 @@ h3 {
   text-transform: uppercase;
 }
 
-.message p {
+.message-content {
+  display: grid;
+  gap: 12px;
+}
+
+.message-content h4,
+.message-content p,
+.message-content ul,
+.message-content ol {
   margin: 0;
+}
+
+.message-content h4 {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.32;
+}
+
+.message-content p,
+.message-content li {
   line-height: 1.55;
-  white-space: pre-wrap;
+}
+
+.message-content ul,
+.message-content ol {
+  display: grid;
+  gap: 5px;
+  padding-left: 22px;
+}
+
+.message-content strong {
+  font-weight: 850;
+}
+
+.message.user .message-content {
+  gap: 0;
 }
 
 .composer {
