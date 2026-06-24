@@ -36,7 +36,7 @@ Do not claim to see an image, file, camera setting, screen, print, or artwork un
 `.trim()
   },
   critique: {
-    name: "Portfolio Coach",
+    name: "Creative Critique",
     purpose:
       "Give formative creative critique through questions, trade-offs, revision paths, intent, audience, and rubric-aware feedback.",
     instructions: `

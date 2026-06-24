@@ -28,7 +28,7 @@ const AGENTS = {
       "Tell me what you are trying to make, what equipment or software you are using, and what is going wrong."
   },
   critique: {
-    name: "Portfolio Coach",
+    name: "Creative Critique",
     type: "Formative critique",
     contextTitle: "Creative critique",
     contextCopy:

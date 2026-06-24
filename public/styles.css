@@ -129,9 +129,9 @@ h3 {
 
 .agent-button {
   display: grid;
-  gap: 4px;
+  align-items: center;
   width: 100%;
-  min-height: 70px;
+  min-height: 54px;
   padding: 14px;
   border: 1px solid rgba(255, 253, 247, 0.16);
   border-radius: var(--radius);
@@ -153,26 +153,6 @@ h3 {
 
 .agent-button span {
   font-weight: 800;
-}
-
-.agent-button small {
-  color: rgba(255, 253, 247, 0.7);
-}
-
-.rail-art {
-  overflow: hidden;
-  margin-top: auto;
-  border: 1px solid rgba(255, 253, 247, 0.14);
-  border-radius: var(--radius);
-  aspect-ratio: 1 / 0.72;
-  background: #222;
-}
-
-.rail-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .chat-workspace {
@@ -459,11 +439,7 @@ textarea:focus {
   }
 
   .agent-button {
-    min-height: 82px;
-  }
-
-  .rail-art {
-    display: none;
+    min-height: 56px;
   }
 
   .workspace-header,

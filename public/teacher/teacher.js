@@ -26,7 +26,7 @@ const AGENT_LABELS = {
   assignment: "Assignment Guide",
   brief: "Assignment Guide",
   technical: "Technical Tutor",
-  critique: "Portfolio Coach",
+  critique: "Creative Critique",
   client: "Client Simulator"
 };
 
