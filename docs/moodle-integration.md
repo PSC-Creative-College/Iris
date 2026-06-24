@@ -196,6 +196,8 @@ Teachers log into Moodle normally, open the Iris Teacher Studio external tool, a
 
 The older `/teacher/` path can remain protected by Cloudflare Access as an admin fallback, but it is no longer the recommended teacher route for the pilot. Keep `TEACHER_ACCESS_CODE` only for temporary testing.
 
+When Teacher Studio is opened through Moodle LTI, the Moodle sync scans the course ID from that launch session. This means a teacher launching Iris from course `3308` scans course `3308`, while a launch from another course scans that other course. `MOODLE_COURSE_ID` is only used as a fallback for non-LTI/admin testing.
+
 ## Student Workflow
 
 ```text

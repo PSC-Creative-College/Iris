@@ -262,8 +262,12 @@ async function scanMoodleCourse() {
     state.moodleItems = data.items || [];
     renderMoodleItems();
     const importableCount = state.moodleItems.filter((item) => !item.imported).length;
+    const courseLabel = data.courseName || data.launchedCourseTitle || `course ${data.courseId}`;
+    const sourceLabel = data.courseSource === "moodle-lti"
+      ? "Moodle launch"
+      : "configured fallback";
     setMoodleStatus(
-      `Found ${state.moodleItems.length} importable items in course ${data.courseId}. ${importableCount} not yet imported.`
+      `Found ${state.moodleItems.length} importable items in ${courseLabel} (${data.courseId}, ${sourceLabel}). ${importableCount} not yet imported.`
     );
   } catch (error) {
     state.moodleItems = [];

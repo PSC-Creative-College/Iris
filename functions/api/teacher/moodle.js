@@ -6,17 +6,21 @@ const DEFAULT_AGENT_KEY = "assignment";
 const MAX_MOODLE_FILE_BYTES = 8_000_000;
 
 export async function onRequestGet({ request, env }) {
-  const { response } = await requireTeacher(request, env);
+  const { teacher, response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 
   try {
-    const scan = await scanMoodleCourse(env);
+    const target = getMoodleScanTarget(env, teacher);
+    const scan = await scanMoodleCourse(env, target.courseId);
     const imported = await importedSourceUrls(env, scan.courseId);
     return json({
       ok: true,
       courseId: scan.courseId,
-      courseName: scan.courseName,
+      courseName: target.courseTitle || scan.courseName,
+      courseSource: target.source,
+      launchedCourseId: teacher.moodleCourseId || null,
+      launchedCourseTitle: teacher.courseTitle || null,
       baseUrl: scan.baseUrl,
       items: scan.items.map((item) => ({
         ...publicItem(item),
@@ -48,7 +52,8 @@ export async function onRequestPost({ request, env }) {
   const agentKey = normalizeAgentKey(body?.agentKey);
 
   try {
-    const scan = await scanMoodleCourse(env);
+    const target = getMoodleScanTarget(env, teacher);
+    const scan = await scanMoodleCourse(env, target.courseId);
     const selected = scan.items.filter((item) => ids.includes(item.id));
     if (!selected.length) return json({ error: "No matching Moodle items were found." }, 400);
 
@@ -90,11 +95,32 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-async function scanMoodleCourse(env) {
+function getMoodleScanTarget(env, teacher) {
+  const launchedCourseId = String(teacher?.moodleCourseId || "").trim();
+  if (teacher?.mode === "moodle-lti" && launchedCourseId) {
+    return {
+      courseId: launchedCourseId,
+      courseTitle: teacher.courseTitle || "",
+      source: "moodle-lti"
+    };
+  }
+
+  return {
+    courseId: String(env.MOODLE_COURSE_ID || "").trim(),
+    courseTitle: "",
+    source: "environment"
+  };
+}
+
+async function scanMoodleCourse(env, requestedCourseId) {
   const baseUrl = cleanBaseUrl(env.MOODLE_BASE_URL);
-  const courseId = String(env.MOODLE_COURSE_ID || "").trim();
+  const courseId = String(requestedCourseId || "").trim();
   if (!baseUrl) throw new Error("MOODLE_BASE_URL is not configured.");
-  if (!courseId) throw new Error("MOODLE_COURSE_ID is not configured.");
+  if (!courseId) {
+    throw new Error(
+      "No Moodle course id is available. Launch Teacher Studio from a Moodle course, or set MOODLE_COURSE_ID as a fallback."
+    );
+  }
   if (!env.MOODLE_API_TOKEN) throw new Error("MOODLE_API_TOKEN is not configured.");
 
   await callMoodle(env, "core_webservice_get_site_info", {});
