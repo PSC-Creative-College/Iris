@@ -47,6 +47,14 @@ Limitations:
 - Image critique and portfolio tools may need more room.
 - Browser and iframe restrictions can create extra friction.
 
+For the PSC pilot, Cloudflare Pages must allow Moodle to frame Iris. The current allowed Moodle host is:
+
+```text
+https://psc.trainingvc.com.au
+```
+
+If the student chatbot is embedded in Moodle, protect only the teacher paths with Cloudflare Access. Do not put the whole Iris site behind staff-only login.
+
 ### Option 2: New Tab
 
 Moodle opens Iris in a new browser tab.
@@ -148,6 +156,19 @@ Later workflow:
 3. Iris activity appears in the weekly course area or assessment section.
 ```
 
+## Teacher Login During The Pilot
+
+Use Cloudflare Access with PSC Microsoft sign-in for Teacher Studio:
+
+```text
+https://iris-7jo.pages.dev/teacher/*
+https://iris-7jo.pages.dev/api/teacher/*
+```
+
+Teachers authenticate with their PSC account before Cloudflare lets the request reach Iris. Iris then records uploads and Moodle imports against the authenticated teacher email.
+
+Keep the temporary `TEACHER_ACCESS_CODE` only while Access is being tested. Remove it from production when Microsoft sign-in works.
+
 ## Student Workflow
 
 ```text
@@ -224,4 +245,3 @@ Avoid:
 - Does PSC want Microsoft 365 or Google Drive document integration?
 - What data retention rules apply to student conversations?
 - Should students see their own conversation archive?
-

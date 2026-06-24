@@ -239,14 +239,26 @@ The first teacher upload area is available at:
 https://your-iris-pages-url.pages.dev/teacher/
 ```
 
-For production, protect both paths with Cloudflare Access:
+For production, protect the teacher area with Cloudflare Access and PSC Microsoft sign-in. Keep the student chat page public enough for Moodle to load it.
+
+Protect both paths:
 
 ```text
 /teacher/*
 /api/teacher/*
 ```
 
-Cloudflare Access should send the authenticated teacher email to Iris. You can optionally restrict allowed teachers with:
+Do not protect the whole site yet, because students need to open the Iris chatbot from Moodle.
+
+If Cloudflare only offers whole-site protection for the `iris-7jo.pages.dev` address, add a custom domain first, such as:
+
+```text
+iris.psc.edu.au
+```
+
+Then create path-based Access rules for only `/teacher/*` and `/api/teacher/*` on that custom domain. This keeps the student chatbot available from Moodle while putting Teacher Studio behind Microsoft sign-in.
+
+Cloudflare Access sends the authenticated teacher email to Iris. Iris already reads that email from the Cloudflare Access request header. You can restrict allowed teachers with:
 
 ```text
 TEACHER_EMAIL_DOMAIN=psc.edu.au
@@ -258,6 +270,14 @@ or a comma-separated allowlist:
 TEACHER_EMAIL_ALLOWLIST=teacher1@psc.edu.au,teacher2@psc.edu.au
 ```
 
+Recommended pilot setting:
+
+```text
+TEACHER_EMAIL_DOMAIN=psc.edu.au
+```
+
+Once Cloudflare Access is working, remove `TEACHER_ACCESS_CODE` from production so the temporary password path is no longer active.
+
 For temporary testing before Cloudflare Access is configured, set:
 
 ```bash
@@ -268,7 +288,23 @@ Then redeploy the Pages project. The `/teacher/` page will accept that code and 
 
 The upload area accepts `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files under 8 MB. Legacy `.doc` files should be saved as `.docx` first. Scanned or image-only PDFs need OCR before Iris can read them.
 
-## 9. Moodle Course Sync
+## 9. Allow Moodle To Embed Iris
+
+Iris can be shown inside the PSC Moodle course as an iframe or Moodle page. The `_headers` file allows this Moodle host:
+
+```text
+https://psc.trainingvc.com.au
+```
+
+If PSC later moves Moodle to another domain, add that domain to the `frame-ancestors` value in:
+
+```text
+public/_headers
+```
+
+Then commit and redeploy the Pages project.
+
+## 10. Moodle Course Sync
 
 For the first Moodle sync trial, Iris needs a Moodle Web Services token for a limited Moodle user enrolled only in the test course.
 
