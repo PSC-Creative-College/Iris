@@ -81,6 +81,7 @@ The repository now includes a first Cloudflare Pages prototype:
 - Teacher resource uploads for text, Markdown, CSV, JSON, Word `.docx`, and text-based PDF files.
 - Moodle course sync for approved course materials.
 - Moodle LTI 1.3 resource link launch endpoints for student/course context.
+- Moodle LTI teacher launch for Teacher Studio at `/studio/`.
 - Demo mode when no model API key is configured.
 
 Cloudflare Pages settings for the prototype:

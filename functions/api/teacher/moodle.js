@@ -6,7 +6,7 @@ const DEFAULT_AGENT_KEY = "assignment";
 const MAX_MOODLE_FILE_BYTES = 8_000_000;
 
 export async function onRequestGet({ request, env }) {
-  const { response } = requireTeacher(request, env);
+  const { response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 
@@ -29,7 +29,7 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const { teacher, response } = requireTeacher(request, env);
+  const { teacher, response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 
@@ -72,7 +72,7 @@ export async function onRequestPost({ request, env }) {
       const resource = await storeMoodleResource(env, {
         courseId: scan.courseId,
         agentKey,
-        teacherEmail: teacher.email,
+        teacherEmail: teacher.name || teacher.email,
         item,
         text: cleanText,
         fileName: extracted.fileName,

@@ -237,52 +237,42 @@ This first prototype is not yet an LTI tool. The next integration step is to add
 
 The current app is intentionally small so the Pages deployment, D1 database, and AI call path can be verified first.
 
-## 8. Teacher Upload Login
+## 8. Teacher Studio Login
 
-The first teacher upload area is available at:
+The Moodle LTI teacher area is available at:
 
 ```text
-https://your-iris-pages-url.pages.dev/teacher/
+https://your-iris-pages-url.pages.dev/studio/
 ```
 
-For production, protect the teacher area with Cloudflare Access and PSC Microsoft sign-in. Keep the student chat page public enough for Moodle to load it.
+For the pilot, use Moodle LTI as the primary teacher login. Teachers launch Iris Teacher Studio from Moodle, and Iris checks the Moodle role before unlocking teacher tools.
 
-Protect both paths:
+The older Cloudflare Access-protected admin fallback can remain at:
 
 ```text
 /teacher/*
 /api/teacher/*
 ```
 
-Do not protect the whole site yet, because students need to open the Iris chatbot from Moodle.
-
-If Cloudflare only offers whole-site protection for the `iris-7jo.pages.dev` address, add a custom domain first, such as:
+Do not protect these Moodle LTI paths with Cloudflare Access, because Moodle needs to launch them directly:
 
 ```text
-iris.psc.edu.au
+/studio/*
+/api/studio/*
 ```
 
-Then create path-based Access rules for only `/teacher/*` and `/api/teacher/*` on that custom domain. This keeps the student chatbot available from Moodle while putting Teacher Studio behind Microsoft sign-in.
+Optional LTI teacher-role keywords:
 
-Cloudflare Access sends the authenticated teacher email to Iris. Iris already reads that email from the Cloudflare Access request header. You can restrict allowed teachers with:
+```text
+TEACHER_LTI_ROLE_KEYWORDS=instructor,teacher,teachingassistant,administrator,manager,contentdeveloper
+```
+
+Cloudflare Access is still supported as an optional fallback. If you use it, restrict allowed teachers with:
 
 ```text
 TEACHER_EMAIL_DOMAIN=psc.edu.au
-```
-
-or a comma-separated allowlist:
-
-```text
 TEACHER_EMAIL_ALLOWLIST=teacher1@psc.edu.au,teacher2@psc.edu.au
 ```
-
-Recommended pilot setting:
-
-```text
-TEACHER_EMAIL_DOMAIN=psc.edu.au
-```
-
-Once Cloudflare Access is working, remove `TEACHER_ACCESS_CODE` from production so the temporary password path is no longer active.
 
 For temporary testing before Cloudflare Access is configured, set:
 
@@ -290,7 +280,7 @@ For temporary testing before Cloudflare Access is configured, set:
 wrangler pages secret put TEACHER_ACCESS_CODE --project-name iris
 ```
 
-Then redeploy the Pages project. The `/teacher/` page will accept that code and store it only in the current browser session.
+Then redeploy the Pages project. The `/studio/` and `/teacher/` pages will accept that code and store it only in the current browser session.
 
 The upload area accepts `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files under 8 MB. Legacy `.doc` files should be saved as `.docx` first. Scanned or image-only PDFs need OCR before Iris can read them.
 
@@ -347,7 +337,8 @@ Iris can also be registered in Moodle as an LTI 1.3 external tool so Moodle can 
 Iris URLs for Moodle:
 
 ```text
-Tool URL / Target link URI: https://iris-7jo.pages.dev/
+Student Tool URL / Target link URI: https://iris-7jo.pages.dev/
+Teacher Tool URL / Target link URI: https://iris-7jo.pages.dev/studio/
 Initiate login URL: https://iris-7jo.pages.dev/api/lti/login
 Redirect URI: https://iris-7jo.pages.dev/api/lti/launch
 Public keyset URL: https://iris-7jo.pages.dev/api/lti/jwks
@@ -367,3 +358,5 @@ MOODLE_LTI_DEPLOYMENT_ID=<deployment id from Moodle>
 Then redeploy the Pages project.
 
 The first LTI version supports resource link launches. It validates Moodle's signed launch token, stores the launch session, displays the Moodle course/student context in the student interface, and logs conversations against the Moodle user/course IDs. Gradebook, deep linking, and names/roles services are intentionally left for a later version.
+
+Teacher Studio uses the same LTI launch but targets `/studio/`. Iris unlocks the teacher tools only if Moodle sends an instructor, teacher, teaching assistant, administrator, manager, or content developer role.

@@ -279,6 +279,7 @@ export function ltiConfig(request, env) {
   return {
     toolName: "Iris AI Studio",
     toolUrl: absoluteUrl(request, "/"),
+    teacherStudioUrl: absoluteUrl(request, "/studio/"),
     initiateLoginUrl: absoluteUrl(request, "/api/lti/login"),
     redirectUri: absoluteUrl(request, "/api/lti/launch"),
     publicKeysetUrl: absoluteUrl(request, "/api/lti/jwks"),

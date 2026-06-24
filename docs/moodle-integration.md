@@ -93,6 +93,18 @@ Redirect URI: https://iris-7jo.pages.dev/api/lti/launch
 Public keyset URL: https://iris-7jo.pages.dev/api/lti/jwks
 ```
 
+For teachers, create a second Moodle LTI tool or activity using the same LTI URLs but a different target:
+
+```text
+Tool name: Iris Teacher Studio
+Tool URL / Target link URI: https://iris-7jo.pages.dev/studio/
+Initiate login URL: https://iris-7jo.pages.dev/api/lti/login
+Redirect URI: https://iris-7jo.pages.dev/api/lti/launch
+Public keyset URL: https://iris-7jo.pages.dev/api/lti/jwks
+```
+
+Only make the teacher activity visible to teachers. Iris also checks the LTI role sent by Moodle and unlocks Teacher Studio only for instructor/teacher/admin-style roles.
+
 Useful Iris config endpoint:
 
 ```text
@@ -174,16 +186,15 @@ Later workflow:
 
 ## Teacher Login During The Pilot
 
-Use Cloudflare Access with PSC Microsoft sign-in for Teacher Studio:
+Use Moodle LTI as the primary teacher login:
 
 ```text
-https://iris-7jo.pages.dev/teacher/*
-https://iris-7jo.pages.dev/api/teacher/*
+https://iris-7jo.pages.dev/studio/
 ```
 
-Teachers authenticate with their PSC account before Cloudflare lets the request reach Iris. Iris then records uploads and Moodle imports against the authenticated teacher email.
+Teachers log into Moodle normally, open the Iris Teacher Studio external tool, and Moodle passes their teacher role to Iris. Iris then unlocks uploads, Moodle sync, and conversation logs.
 
-Keep the temporary `TEACHER_ACCESS_CODE` only while Access is being tested. Remove it from production when Microsoft sign-in works.
+The older `/teacher/` path can remain protected by Cloudflare Access as an admin fallback, but it is no longer the recommended teacher route for the pilot. Keep `TEACHER_ACCESS_CODE` only for temporary testing.
 
 ## Student Workflow
 

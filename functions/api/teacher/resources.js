@@ -9,7 +9,7 @@ const DEFAULT_AGENT_KEY = "assignment";
 const MAX_UPLOAD_BYTES = 8_000_000;
 
 export async function onRequestGet({ request, env }) {
-  const { response } = requireTeacher(request, env);
+  const { response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 
@@ -39,7 +39,7 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const { teacher, response } = requireTeacher(request, env);
+  const { teacher, response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 
@@ -110,7 +110,7 @@ export async function onRequestPost({ request, env }) {
       agentKey,
       resourceTitle,
       null,
-      teacher.email,
+      teacher.name || teacher.email,
       fileName,
       mimeType,
       file.size,
@@ -139,6 +139,7 @@ export async function onRequestPost({ request, env }) {
         fileName,
         chunks: chunks.length,
         uploadedBy: teacher.email,
+        uploadedByName: teacher.name || teacher.email,
         createdAt: now
       }
     },
@@ -147,7 +148,7 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  const { response } = requireTeacher(request, env);
+  const { response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 

@@ -5,7 +5,7 @@ const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 25;
 
 export async function onRequestGet({ request, env }) {
-  const { response } = requireTeacher(request, env);
+  const { response } = await requireTeacher(request, env);
   if (response) return response;
   if (!env.DB) return json({ error: "D1 binding DB is missing." }, 500);
 

@@ -4,6 +4,8 @@ const state = {
   moodleItems: []
 };
 
+const API_BASE = location.pathname.startsWith("/studio") ? "/api/studio" : "/api/teacher";
+
 const authNotice = document.querySelector("#authNotice");
 const accessPanel = document.querySelector("#accessPanel");
 const accessForm = document.querySelector("#accessForm");
@@ -55,12 +57,12 @@ async function api(path, options = {}) {
 
 async function checkSession() {
   try {
-    const data = await api("/api/teacher/session");
+    const data = await api(`${API_BASE}/session`);
     if (data.authenticated) {
       state.authenticated = true;
       accessPanel.hidden = true;
       studioGrid.hidden = false;
-      setNotice(`Signed in as ${data.email} via ${data.mode}.`, "good");
+      setNotice(formatSignedInNotice(data), "good");
       await Promise.all([loadResources(), loadConversations()]);
       return;
     }
@@ -79,7 +81,7 @@ async function checkSession() {
 
 async function loadResources() {
   resourceList.innerHTML = "<p class=\"empty-state\">Loading resources...</p>";
-  const data = await api("/api/teacher/resources");
+  const data = await api(`${API_BASE}/resources`);
   const resources = data.resources || [];
 
   if (!resources.length) {
@@ -132,7 +134,7 @@ async function loadConversations() {
   conversationStatus.textContent = "Loading recent Moodle-launched Iris conversations...";
 
   try {
-    const data = await api("/api/teacher/conversations");
+    const data = await api(`${API_BASE}/conversations`);
     const conversations = data.conversations || [];
 
     if (!conversations.length) {
@@ -238,7 +240,7 @@ async function deleteResource(id, title) {
   const ok = confirm(`Delete "${title}" from Iris resources?`);
   if (!ok) return;
 
-  await api(`/api/teacher/resources?id=${encodeURIComponent(id)}`, {
+  await api(`${API_BASE}/resources?id=${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   setNotice(`Deleted "${title}".`, "good");
@@ -256,7 +258,7 @@ async function scanMoodleCourse() {
   setMoodleStatus("Scanning Moodle course...");
 
   try {
-    const data = await api("/api/teacher/moodle");
+    const data = await api(`${API_BASE}/moodle`);
     state.moodleItems = data.items || [];
     renderMoodleItems();
     const importableCount = state.moodleItems.filter((item) => !item.imported).length;
@@ -340,7 +342,7 @@ async function importSelectedMoodleItems() {
   setMoodleStatus(`Importing ${itemIds.length} Moodle item${itemIds.length === 1 ? "" : "s"}...`);
 
   try {
-    const data = await api("/api/teacher/moodle", {
+    const data = await api(`${API_BASE}/moodle`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -381,7 +383,7 @@ uploadForm.addEventListener("submit", async (event) => {
 
   try {
     const form = new FormData(uploadForm);
-    const response = await fetch("/api/teacher/resources", {
+    const response = await fetch(`${API_BASE}/resources`, {
       method: "POST",
       headers: authHeaders(),
       body: form
@@ -424,6 +426,13 @@ function formatBytes(value) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatSignedInNotice(data) {
+  const person = data.name || data.email || "Moodle teacher";
+  const mode = data.mode === "moodle-lti" ? "Moodle LTI" : data.mode;
+  const course = data.courseTitle ? ` for ${data.courseTitle}` : "";
+  return `Signed in as ${person} via ${mode}${course}.`;
 }
 
 function moodleKindLabel(kind) {

@@ -1,4 +1,17 @@
-export function getTeacher(request, env) {
+import { getLtiSessionContext } from "./lti.js";
+
+const DEFAULT_LTI_TEACHER_KEYWORDS = [
+  "administrator",
+  "contentdeveloper",
+  "instructor",
+  "manager",
+  "mentor",
+  "staff",
+  "teacher",
+  "teachingassistant"
+];
+
+export async function getTeacher(request, env) {
   const accessEmail =
     request.headers.get("cf-access-authenticated-user-email") ||
     request.headers.get("cf-access-authenticated-user-email".toLowerCase());
@@ -21,16 +34,30 @@ export function getTeacher(request, env) {
     };
   }
 
+  const ltiContext = await getLtiSessionContext(request, env);
+  if (ltiContext && ltiRoleIsAllowed(ltiContext.roles, env)) {
+    return {
+      ok: true,
+      email: ltiContext.userEmail || `moodle-user:${ltiContext.userId}`,
+      name: ltiContext.userName || "Moodle teacher",
+      mode: "moodle-lti",
+      moodleUserId: ltiContext.userId,
+      moodleCourseId: ltiContext.courseId,
+      courseTitle: ltiContext.courseTitle,
+      roles: ltiContext.roles
+    };
+  }
+
   return {
     ok: false,
     status: 401,
     message:
-      "Teacher access is not configured for this request. Use Cloudflare Access or set TEACHER_ACCESS_CODE for temporary testing."
+      "Teacher access is not configured for this request. Launch Teacher Studio from Moodle as a teacher, or use the temporary access code."
   };
 }
 
-export function requireTeacher(request, env) {
-  const teacher = getTeacher(request, env);
+export async function requireTeacher(request, env) {
+  const teacher = await getTeacher(request, env);
   if (!teacher.ok) {
     return {
       teacher,
@@ -76,3 +103,15 @@ function emailIsAllowed(email, env) {
   return true;
 }
 
+function ltiRoleIsAllowed(roles = [], env) {
+  const keywords = String(env.TEACHER_LTI_ROLE_KEYWORDS || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  const allowed = keywords.length ? keywords : DEFAULT_LTI_TEACHER_KEYWORDS;
+
+  return roles.some((role) => {
+    const clean = String(role || "").toLowerCase();
+    return allowed.some((keyword) => clean.includes(keyword));
+  });
+}
