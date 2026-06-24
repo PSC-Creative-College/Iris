@@ -35,10 +35,12 @@ PSC-Creative-College/Iris
 
 ```text
 Framework preset: None
-Build command: leave blank
+Build command: npm run build
 Build output directory: public
 Root directory: /
 ```
+
+Iris uses static files from `public/`, but the Pages Functions need npm dependencies for Word and PDF imports. The build command lets Cloudflare install those dependencies before it bundles the functions.
 
 7. Deploy.
 
