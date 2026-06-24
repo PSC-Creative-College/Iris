@@ -83,33 +83,49 @@ This gives students a clean starting point in Moodle and gives Iris enough room 
 
 The Moodle administrator will need to configure Iris as an external tool.
 
-Typical setup includes:
+For the current Iris pilot, use these tool values:
 
-- Tool name: Iris
-- Tool URL / launch URL
-- Public key or keyset URL
-- Login initiation URL
-- Redirect URI
-- Client ID
-- Deployment ID
-- Tool permissions
-- Launch container preference
+```text
+Tool name: Iris AI Studio
+Tool URL / Target link URI: https://iris-7jo.pages.dev/
+Initiate login URL: https://iris-7jo.pages.dev/api/lti/login
+Redirect URI: https://iris-7jo.pages.dev/api/lti/launch
+Public keyset URL: https://iris-7jo.pages.dev/api/lti/jwks
+```
 
-Exact settings depend on the final LTI library and hosting environment.
+Useful Iris config endpoint:
+
+```text
+https://iris-7jo.pages.dev/api/lti/config
+```
+
+After Moodle creates the external tool, copy Moodle's values into Cloudflare Pages:
+
+```text
+MOODLE_LTI_ISSUER=https://psc.trainingvc.com.au
+MOODLE_LTI_AUTH_URL=https://psc.trainingvc.com.au/mod/lti/auth.php
+MOODLE_LTI_JWKS_URL=https://psc.trainingvc.com.au/mod/lti/certs.php
+MOODLE_LTI_CLIENT_ID=<client id from Moodle>
+MOODLE_LTI_DEPLOYMENT_ID=<deployment id from Moodle>
+```
+
+Then redeploy Iris.
+
+For the first pilot, Iris supports LTI 1.3 resource link launches. Gradebook, deep linking, and names/roles services can be added later.
 
 ## Data Sent From Moodle
 
 Iris should request only the information needed for learning and access control.
 
-Likely required:
+The first LTI launch stores:
 
 - Moodle user ID
 - User name
 - User email
-- Course ID
+- Course/context ID
 - Course name
-- Role in course
-- Activity/context ID
+- Roles sent by Moodle
+- Resource link ID/title
 - LTI issuer, client ID, and deployment ID
 
 Optional later:

@@ -1,3 +1,5 @@
+import { getLtiSessionContext } from "../_shared/lti.js";
+
 const AGENTS = {
   assignment: {
     name: "Assignment Guide",
@@ -101,6 +103,7 @@ export async function onRequestPost(context) {
     const body = await request.json();
     const clean = normalizeBody(body);
     const agent = AGENTS[clean.agent] || AGENTS[DEFAULT_AGENT_KEY];
+    const ltiContext = await getLtiSessionContext(request, env);
     const resourceContext = await retrieveResourceContext(env, clean.agent, clean.message);
 
     const provider = resolveProvider(env, clean.agent);
@@ -119,6 +122,7 @@ export async function onRequestPost(context) {
         message: clean.message,
         history: clean.history,
         resourceContext,
+        ltiContext,
         env
       });
     } else {
@@ -128,7 +132,8 @@ export async function onRequestPost(context) {
         agent,
         message: clean.message,
         history: clean.history,
-        resourceContext
+        resourceContext,
+        ltiContext
       });
     }
 
@@ -138,7 +143,8 @@ export async function onRequestPost(context) {
       userMessage: clean.message,
       assistantMessage: reply,
       model: provider.model,
-      mode
+      mode,
+      ltiContext
     });
 
     return json({
@@ -146,7 +152,14 @@ export async function onRequestPost(context) {
       mode,
       provider: provider.provider,
       model: provider.model,
-      conversationId: clean.conversationId
+      conversationId: clean.conversationId,
+      lti: ltiContext
+        ? {
+            courseTitle: ltiContext.courseTitle,
+            courseId: ltiContext.courseId,
+            userName: ltiContext.userName
+          }
+        : null
     });
   } catch (error) {
     return json({ error: error.message || "Unable to process chat request." }, 400);
@@ -192,8 +205,8 @@ function normalizeAgentKey(value) {
   return AGENTS[canonical] ? canonical : DEFAULT_AGENT_KEY;
 }
 
-async function callOpenAI({ apiKey, model, agent, message, history, resourceContext }) {
-  const transcript = buildTranscript(history, message, resourceContext);
+async function callOpenAI({ apiKey, model, agent, message, history, resourceContext, ltiContext }) {
+  const transcript = buildTranscript(history, message, resourceContext, ltiContext);
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -226,9 +239,10 @@ async function callOpenRouter({
   message,
   history,
   resourceContext,
+  ltiContext,
   env
 }) {
-  const messages = buildChatMessages(history, message, resourceContext, agent);
+  const messages = buildChatMessages(history, message, resourceContext, agent, ltiContext);
   const body = {
     model,
     messages,
@@ -260,7 +274,7 @@ async function callOpenRouter({
   return extractChatCompletionText(data);
 }
 
-function buildTranscript(history, message, resourceContext = []) {
+function buildTranscript(history, message, resourceContext = [], ltiContext = null) {
   const previous = history
     .slice(-8)
     .map((item) => `${item.role === "assistant" ? "Iris" : "Student"}: ${item.content}`)
@@ -278,6 +292,9 @@ function buildTranscript(history, message, resourceContext = []) {
 Conversation so far:
 ${previous || "No previous messages."}
 
+Moodle launch context:
+${formatLtiContext(ltiContext)}
+
 Teacher-uploaded resource context:
 ${contextBlock}
 
@@ -286,7 +303,7 @@ ${message}
 `.trim();
 }
 
-function buildChatMessages(history, message, resourceContext, agent) {
+function buildChatMessages(history, message, resourceContext, agent, ltiContext = null) {
   const resourceBlock = formatResourceContext(resourceContext);
   const system = `${SYSTEM_INSTRUCTIONS}
 
@@ -297,6 +314,9 @@ Agent instructions:
 ${agent.instructions}
 
 Use teacher-uploaded resource context when it is relevant. If the context does not answer the question, say what is missing instead of inventing course details.
+
+Moodle launch context:
+${formatLtiContext(ltiContext)}
 
 Teacher-uploaded resource context:
 ${resourceBlock}`;
@@ -321,6 +341,19 @@ function formatResourceContext(resourceContext = []) {
   return resourceContext
     .map((item, index) => `Resource ${index + 1}: ${item.title}\n${item.content}`)
     .join("\n\n");
+}
+
+function formatLtiContext(ltiContext) {
+  if (!ltiContext) {
+    return "This chat was not launched through Moodle LTI, so Iris does not know the student's Moodle identity or course.";
+  }
+
+  return [
+    `Student name: ${ltiContext.userName || "Not provided"}`,
+    `Course: ${ltiContext.courseTitle || ltiContext.courseLabel || "Not provided"}`,
+    `Moodle course/context id: ${ltiContext.courseId || "Not provided"}`,
+    `Moodle resource: ${ltiContext.resourceLinkTitle || "Not provided"}`
+  ].join("\n");
 }
 
 function extractOutputText(data) {
@@ -533,10 +566,22 @@ async function logConversation(env, event) {
     const now = new Date().toISOString();
     await env.DB.batch([
       env.DB.prepare(
-        "insert or ignore into conversations (id, agent_key, title, created_at, updated_at) values (?, ?, ?, ?, ?)"
-      ).bind(event.conversationId, event.agentKey, "Iris chat", now, now),
-      env.DB.prepare("update conversations set updated_at = ? where id = ?").bind(
+        "insert or ignore into conversations (id, moodle_user_id, moodle_course_id, agent_key, title, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(
+        event.conversationId,
+        event.ltiContext?.userId || null,
+        event.ltiContext?.courseId || null,
+        event.agentKey,
+        "Iris chat",
         now,
+        now
+      ),
+      env.DB.prepare(
+        "update conversations set updated_at = ?, moodle_user_id = coalesce(moodle_user_id, ?), moodle_course_id = coalesce(moodle_course_id, ?) where id = ?"
+      ).bind(
+        now,
+        event.ltiContext?.userId || null,
+        event.ltiContext?.courseId || null,
         event.conversationId
       ),
       env.DB.prepare(

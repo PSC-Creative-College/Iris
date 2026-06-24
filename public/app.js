@@ -74,6 +74,9 @@ const agentTypeEl = document.querySelector("#agentType");
 const contextTitleEl = document.querySelector("#contextTitle");
 const contextCopyEl = document.querySelector("#contextCopy");
 const promptStackEl = document.querySelector("#promptStack");
+const moodleContextEl = document.querySelector("#moodleContext");
+const moodleCourseEl = document.querySelector("#moodleCourse");
+const moodleUserEl = document.querySelector("#moodleUser");
 
 function setStatus(text, busy = false) {
   statusEl.textContent = text;
@@ -273,6 +276,27 @@ async function sendMessage(message) {
   }
 }
 
+async function loadMoodleContext() {
+  try {
+    const response = await fetch("/api/lti/session", {
+      headers: { Accept: "application/json" }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.authenticated) return;
+
+    moodleContextEl.hidden = false;
+    moodleCourseEl.textContent = data.courseTitle || data.courseLabel || "Moodle course";
+    moodleUserEl.textContent = [
+      data.userName ? `Signed in as ${data.userName}` : "Signed in from Moodle",
+      data.resourceLinkTitle || ""
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  } catch {
+    // The normal non-LTI chatbot path should stay quiet.
+  }
+}
+
 document.querySelectorAll(".agent-button").forEach((button) => {
   button.addEventListener("click", () => {
     state.agent = button.dataset.agent;
@@ -300,3 +324,4 @@ clearButton.addEventListener("click", resetConversation);
 
 renderAgent();
 resetConversation();
+loadMoodleContext();

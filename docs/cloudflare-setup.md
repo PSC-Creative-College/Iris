@@ -99,6 +99,8 @@ Apply the SQL files in:
 migrations/0001_initial.sql
 migrations/0002_seed_agents.sql
 migrations/0003_teacher_resources.sql
+migrations/0004_assignment_agent_prompts.sql
+migrations/0005_lti_launches.sql
 ```
 
 You can apply them from the Cloudflare dashboard SQL console, or with Wrangler once it is installed:
@@ -107,9 +109,11 @@ You can apply them from the Cloudflare dashboard SQL console, or with Wrangler o
 wrangler d1 execute iris-prod --file=migrations/0001_initial.sql --remote
 wrangler d1 execute iris-prod --file=migrations/0002_seed_agents.sql --remote
 wrangler d1 execute iris-prod --file=migrations/0003_teacher_resources.sql --remote
+wrangler d1 execute iris-prod --file=migrations/0004_assignment_agent_prompts.sql --remote
+wrangler d1 execute iris-prod --file=migrations/0005_lti_launches.sql --remote
 ```
 
-The first migration creates the Iris tables. The second migration adds the starter agents used by the first prototype. The third migration adds searchable teacher-uploaded resource chunks.
+The first migration creates the Iris tables. The second migration adds the starter agents used by the first prototype. Later migrations add searchable teacher-uploaded resource chunks, updated assignment prompts, and LTI launch sessions.
 
 ## 5. Add AI Provider Environment Variables
 
@@ -335,3 +339,31 @@ In the external service settings, also allow the service to download files. With
 Teacher Studio can then scan the configured Moodle course, show importable activities/files, and import selected materials into the same searchable Iris resource store used by manual uploads.
 
 If Moodle returns `Course or activity not accessible`, the token works but the Moodle user cannot see the configured course. Enrol the service user in the course and give it a role that can view course content, then scan again.
+
+## 11. Moodle LTI 1.3 Launch
+
+Iris can also be registered in Moodle as an LTI 1.3 external tool so Moodle can pass the student and course context securely.
+
+Iris URLs for Moodle:
+
+```text
+Tool URL / Target link URI: https://iris-7jo.pages.dev/
+Initiate login URL: https://iris-7jo.pages.dev/api/lti/login
+Redirect URI: https://iris-7jo.pages.dev/api/lti/launch
+Public keyset URL: https://iris-7jo.pages.dev/api/lti/jwks
+Config check: https://iris-7jo.pages.dev/api/lti/config
+```
+
+After the external tool is created in Moodle, add these Cloudflare production variables:
+
+```text
+MOODLE_LTI_ISSUER=https://psc.trainingvc.com.au
+MOODLE_LTI_AUTH_URL=https://psc.trainingvc.com.au/mod/lti/auth.php
+MOODLE_LTI_JWKS_URL=https://psc.trainingvc.com.au/mod/lti/certs.php
+MOODLE_LTI_CLIENT_ID=<client id from Moodle>
+MOODLE_LTI_DEPLOYMENT_ID=<deployment id from Moodle>
+```
+
+Then redeploy the Pages project.
+
+The first LTI version supports resource link launches. It validates Moodle's signed launch token, stores the launch session, displays the Moodle course/student context in the student interface, and logs conversations against the Moodle user/course IDs. Gradebook, deep linking, and names/roles services are intentionally left for a later version.

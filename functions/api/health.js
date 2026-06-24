@@ -20,7 +20,9 @@ export async function onRequestGet(context) {
       hasOpenRouterKey: Boolean(env.OPENROUTER_API_KEY),
       hasMoodleBaseUrl: Boolean(env.MOODLE_BASE_URL),
       hasMoodleCourseId: Boolean(env.MOODLE_COURSE_ID),
-      hasMoodleApiToken: Boolean(env.MOODLE_API_TOKEN)
+      hasMoodleApiToken: Boolean(env.MOODLE_API_TOKEN),
+      hasMoodleLtiClientId: Boolean(env.MOODLE_LTI_CLIENT_ID),
+      hasMoodleLtiDeploymentId: Boolean(env.MOODLE_LTI_DEPLOYMENT_ID)
     }),
     {
       headers: {

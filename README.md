@@ -80,6 +80,7 @@ The repository now includes a first Cloudflare Pages prototype:
 - OpenRouter or direct OpenAI model calls from the server.
 - Teacher resource uploads for text, Markdown, CSV, JSON, Word `.docx`, and text-based PDF files.
 - Moodle course sync for approved course materials.
+- Moodle LTI 1.3 resource link launch endpoints for student/course context.
 - Demo mode when no model API key is configured.
 
 Cloudflare Pages settings for the prototype:
