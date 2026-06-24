@@ -16,6 +16,9 @@ const moodleScanButton = document.querySelector("#moodleScanButton");
 const moodleImportButton = document.querySelector("#moodleImportButton");
 const moodleStatus = document.querySelector("#moodleStatus");
 const moodleItemList = document.querySelector("#moodleItemList");
+const conversationRefreshButton = document.querySelector("#conversationRefreshButton");
+const conversationStatus = document.querySelector("#conversationStatus");
+const conversationList = document.querySelector("#conversationList");
 
 const AGENT_LABELS = {
   assignment: "Assignment Guide",
@@ -58,7 +61,7 @@ async function checkSession() {
       accessPanel.hidden = true;
       studioGrid.hidden = false;
       setNotice(`Signed in as ${data.email} via ${data.mode}.`, "good");
-      await loadResources();
+      await Promise.all([loadResources(), loadConversations()]);
       return;
     }
 
@@ -122,6 +125,113 @@ async function loadResources() {
       return item;
     })
   );
+}
+
+async function loadConversations() {
+  conversationList.innerHTML = "<p class=\"empty-state\">Loading conversations...</p>";
+  conversationStatus.textContent = "Loading recent Moodle-launched Iris conversations...";
+
+  try {
+    const data = await api("/api/teacher/conversations");
+    const conversations = data.conversations || [];
+
+    if (!conversations.length) {
+      conversationStatus.textContent = "No conversations logged yet.";
+      conversationList.innerHTML =
+        "<p class=\"empty-state\">Launch Iris from Moodle and send a test message to create the first conversation log.</p>";
+      return;
+    }
+
+    conversationStatus.textContent = `Showing ${conversations.length} recent conversation${conversations.length === 1 ? "" : "s"}.`;
+    conversationList.replaceChildren(
+      ...conversations.map((conversation) => renderConversation(conversation))
+    );
+  } catch (error) {
+    conversationStatus.textContent = error.message;
+    conversationList.innerHTML =
+      "<p class=\"empty-state\">Conversation logs could not be loaded.</p>";
+  }
+}
+
+function renderConversation(conversation) {
+  const item = document.createElement("article");
+  item.className = "conversation-item";
+
+  const top = document.createElement("div");
+  top.className = "conversation-top";
+
+  const titleBlock = document.createElement("div");
+  const title = document.createElement("p");
+  title.className = "resource-title";
+  title.textContent = conversation.studentName || "Unknown Moodle user";
+
+  const course = document.createElement("p");
+  course.className = "resource-meta";
+  course.textContent = (conversation.courseTitle || conversation.moodleCourseId)
+    ? `${conversation.courseTitle || "Moodle course"}${conversation.moodleCourseId ? ` (${conversation.moodleCourseId})` : ""}`
+    : "No Moodle course context";
+
+  titleBlock.append(title, course);
+
+  const pill = document.createElement("span");
+  pill.className = "agent-pill";
+  pill.textContent = AGENT_LABELS[conversation.agentKey] || conversation.agentKey || "Iris";
+
+  top.append(titleBlock, pill);
+
+  const meta = document.createElement("p");
+  meta.className = "resource-meta";
+  meta.textContent = [
+    conversation.resourceLinkTitle ? `Tool: ${conversation.resourceLinkTitle}` : "",
+    `${conversation.messageCount || 0} messages`,
+    `Updated ${formatDate(conversation.updatedAt)}`
+  ]
+    .filter(Boolean)
+    .join(" | ");
+
+  const last = document.createElement("p");
+  last.className = "conversation-question";
+  last.textContent = conversation.lastQuestion
+    ? `Latest question: ${truncateText(conversation.lastQuestion, 220)}`
+    : "No student question recorded yet.";
+
+  const details = document.createElement("details");
+  details.className = "conversation-details";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "View transcript";
+
+  const transcript = document.createElement("div");
+  transcript.className = "conversation-transcript";
+  const messages = conversation.messages || [];
+  if (!messages.length) {
+    transcript.innerHTML = "<p class=\"empty-state\">No messages found for this conversation.</p>";
+  } else {
+    transcript.replaceChildren(...messages.map((message) => renderConversationMessage(message)));
+  }
+
+  details.append(summary, transcript);
+  item.append(top, meta, last, details);
+  return item;
+}
+
+function renderConversationMessage(message) {
+  const row = document.createElement("section");
+  row.className = `conversation-message is-${message.role}`;
+
+  const label = document.createElement("p");
+  label.className = "conversation-message-label";
+  label.textContent = [
+    message.role === "assistant" ? "Iris" : message.role === "user" ? "Student" : "System",
+    formatDate(message.createdAt)
+  ].join(" | ");
+
+  const content = document.createElement("p");
+  content.className = "conversation-message-content";
+  content.textContent = message.content;
+
+  row.append(label, content);
+  return row;
 }
 
 async function deleteResource(id, title) {
@@ -295,6 +405,7 @@ uploadForm.addEventListener("submit", async (event) => {
 
 moodleScanButton.addEventListener("click", scanMoodleCourse);
 moodleImportButton.addEventListener("click", importSelectedMoodleItems);
+conversationRefreshButton.addEventListener("click", loadConversations);
 
 function formatDate(value) {
   if (!value) return "unknown date";
@@ -323,6 +434,12 @@ function moodleKindLabel(kind) {
     section: "Section"
   };
   return labels[kind] || "Moodle";
+}
+
+function truncateText(value, maxLength) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1)}...`;
 }
 
 checkSession();

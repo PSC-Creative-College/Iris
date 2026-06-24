@@ -119,7 +119,8 @@ h2 {
 .access-panel,
 .moodle-panel,
 .upload-panel,
-.resource-panel {
+.resource-panel,
+.conversation-panel {
   margin-top: 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -238,9 +239,14 @@ select:focus {
   grid-column: 1 / -1;
 }
 
+.conversation-panel {
+  grid-column: 1 / -1;
+}
+
 .upload-panel,
 .moodle-panel,
-.resource-panel {
+.resource-panel,
+.conversation-panel {
   padding: 22px;
 }
 
@@ -355,6 +361,80 @@ select:focus {
   line-height: 1.5;
 }
 
+.conversation-heading,
+.conversation-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.conversation-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.conversation-item {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #faf7ef;
+}
+
+.conversation-question {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.conversation-details {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.conversation-details summary {
+  color: var(--teal-dark);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.conversation-transcript {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.conversation-message {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.conversation-message.is-user {
+  border-color: #a8ccc6;
+  background: #eef7f4;
+}
+
+.conversation-message-label {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.conversation-message-content {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 840px) {
   .teacher-header,
   .access-panel,
@@ -383,6 +463,11 @@ select:focus {
   }
 
   .resource-title-row {
+    display: grid;
+  }
+
+  .conversation-heading,
+  .conversation-top {
     display: grid;
   }
 
