@@ -26,8 +26,7 @@ const AGENT_LABELS = {
   assignment: "Assignment Guide",
   brief: "Assignment Guide",
   technical: "Technical Tutor",
-  critique: "Creative Critique",
-  client: "Client Simulator"
+  critique: "Creative Critique"
 };
 
 function authHeaders() {
@@ -37,6 +36,20 @@ function authHeaders() {
 function setNotice(message, type = "warning") {
   authNotice.textContent = message;
   authNotice.className = `notice is-${type}`;
+}
+
+function normalizeAgentSelects() {
+  [moodleAgentKey, document.querySelector("#agentKey")].forEach((select) => {
+    if (!select) return;
+    Array.from(select.options).forEach((option) => {
+      const label = AGENT_LABELS[option.value];
+      if (!label) {
+        option.remove();
+        return;
+      }
+      option.textContent = label;
+    });
+  });
 }
 
 async function api(path, options = {}) {
@@ -455,4 +468,5 @@ function truncateText(value, maxLength) {
   return `${text.slice(0, maxLength - 1)}...`;
 }
 
+normalizeAgentSelects();
 checkSession();

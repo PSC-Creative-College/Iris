@@ -1,7 +1,7 @@
 import { json, requireTeacher } from "../../_shared/auth.js";
 import { extractReadableText, getUploadFileKind } from "../../_shared/document-text.js";
 
-const AGENT_KEYS = new Set(["assignment", "technical", "critique", "client"]);
+const AGENT_KEYS = new Set(["assignment", "technical", "critique"]);
 const AGENT_ALIASES = {
   brief: "assignment"
 };

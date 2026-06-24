@@ -1,7 +1,7 @@
 import { extractReadableText, getUploadFileKind } from "../../_shared/document-text.js";
 import { json, requireTeacher } from "../../_shared/auth.js";
 
-const AGENT_KEYS = new Set(["assignment", "technical", "critique", "client"]);
+const AGENT_KEYS = new Set(["assignment", "technical", "critique"]);
 const DEFAULT_AGENT_KEY = "assignment";
 const MAX_MOODLE_FILE_BYTES = 8_000_000;
 
