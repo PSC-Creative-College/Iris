@@ -32,6 +32,8 @@ const AGENT_LABELS = {
   critique: "Creative Critique"
 };
 
+const SELECTABLE_AGENT_KEYS = new Set(["assignment", "technical"]);
+
 const MOODLE_FILTER_LABELS = {
   content: "Content",
   file: "Files",
@@ -55,7 +57,7 @@ function normalizeAgentSelects() {
     if (!select) return;
     Array.from(select.options).forEach((option) => {
       const label = AGENT_LABELS[option.value];
-      if (!label) {
+      if (!label || !SELECTABLE_AGENT_KEYS.has(option.value)) {
         option.remove();
         return;
       }
