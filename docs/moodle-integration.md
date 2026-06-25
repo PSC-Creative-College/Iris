@@ -198,6 +198,12 @@ The older `/teacher/` path can remain protected by Cloudflare Access as an admin
 
 When Teacher Studio is opened through Moodle LTI, the Moodle sync scans the course ID from that launch session. This means a teacher launching Iris from course `3308` scans course `3308`, while a launch from another course scans that other course. `MOODLE_COURSE_ID` is only used as a fallback for non-LTI/admin testing.
 
+Convenor and Provider Administrator roles can also unlock the all-subject transcript archive. Iris checks every Moodle role on the launch, so a user with both Teacher and Provider Administrator (High Level) receives the higher archive access. If Moodle sends a different local role label, set this Cloudflare variable:
+
+```text
+TRANSCRIPT_ADMIN_ROLE_KEYWORDS=convenor,provider administrator,administrator
+```
+
 ## Student Workflow
 
 ```text

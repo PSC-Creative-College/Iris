@@ -1,8 +1,11 @@
 const state = {
   authenticated: false,
+  canViewAllTranscripts: false,
   moodleItems: [],
   moodleFilter: "content",
-  moodleScanContext: null
+  moodleScanContext: null,
+  archiveCourseId: "",
+  archiveCourses: []
 };
 
 const API_BASE = location.pathname.startsWith("/studio") ? "/api/studio" : "/api/teacher";
@@ -22,6 +25,12 @@ const moodleItemList = document.querySelector("#moodleItemList");
 const conversationRefreshButton = document.querySelector("#conversationRefreshButton");
 const conversationStatus = document.querySelector("#conversationStatus");
 const conversationList = document.querySelector("#conversationList");
+const adminArchivePanel = document.querySelector("#adminArchivePanel");
+const archiveCourseFilter = document.querySelector("#archiveCourseFilter");
+const archiveRefreshButton = document.querySelector("#archiveRefreshButton");
+const archiveDownloadButton = document.querySelector("#archiveDownloadButton");
+const archiveStatus = document.querySelector("#archiveStatus");
+const archiveConversationList = document.querySelector("#archiveConversationList");
 
 const AGENT_LABELS = {
   assignment: "Assignment Guide",
@@ -85,21 +94,31 @@ async function checkSession() {
     const data = await api(`${API_BASE}/session`);
     if (data.authenticated) {
       state.authenticated = true;
+      state.canViewAllTranscripts = Boolean(data.canViewAllTranscripts);
       accessPanel.hidden = true;
       studioGrid.hidden = false;
+      if (adminArchivePanel) {
+        adminArchivePanel.hidden = !state.canViewAllTranscripts;
+      }
       setNotice(formatSignedInNotice(data), "good");
-      await Promise.all([loadResources(), loadConversations()]);
+      const loaders = [loadResources(), loadConversations()];
+      if (state.canViewAllTranscripts) loaders.push(loadTranscriptArchive());
+      await Promise.all(loaders);
       return;
     }
 
     state.authenticated = false;
+    state.canViewAllTranscripts = false;
     accessPanel.hidden = false;
     studioGrid.hidden = true;
+    if (adminArchivePanel) adminArchivePanel.hidden = true;
     setNotice(data.message || "Teacher login is required.", "warning");
   } catch (error) {
     state.authenticated = false;
+    state.canViewAllTranscripts = false;
     accessPanel.hidden = false;
     studioGrid.hidden = true;
+    if (adminArchivePanel) adminArchivePanel.hidden = true;
     setNotice(error.message, "error");
   }
 }
@@ -156,14 +175,14 @@ async function loadResources() {
 
 async function loadConversations() {
   conversationList.innerHTML = "<p class=\"empty-state\">Loading conversations...</p>";
-  conversationStatus.textContent = "Loading recent Moodle-launched Iris conversations...";
+  conversationStatus.textContent = "Loading recent subject conversations...";
 
   try {
     const data = await api(`${API_BASE}/conversations`);
     const conversations = data.conversations || [];
 
     if (!conversations.length) {
-      conversationStatus.textContent = "No conversations logged yet.";
+      conversationStatus.textContent = "No conversations logged for this subject yet.";
       conversationList.innerHTML =
         "<p class=\"empty-state\">Launch Iris from Moodle and send a test message to create the first conversation log.</p>";
       return;
@@ -178,6 +197,118 @@ async function loadConversations() {
     conversationList.innerHTML =
       "<p class=\"empty-state\">Conversation logs could not be loaded.</p>";
   }
+}
+
+async function loadTranscriptArchive() {
+  if (!state.canViewAllTranscripts || !archiveConversationList) return;
+
+  archiveConversationList.innerHTML = "<p class=\"empty-state\">Loading transcript archive...</p>";
+  archiveStatus.textContent = "Loading all-subject transcript archive...";
+  archiveRefreshButton.disabled = true;
+  archiveDownloadButton.disabled = true;
+
+  try {
+    const params = new URLSearchParams({
+      scope: "all",
+      limit: "50"
+    });
+    if (state.archiveCourseId) params.set("courseId", state.archiveCourseId);
+
+    const data = await api(`${API_BASE}/conversations?${params.toString()}`);
+    const conversations = data.conversations || [];
+    state.archiveCourses = data.courses || [];
+    renderArchiveCourseFilter(data.selectedCourseId || state.archiveCourseId);
+
+    if (!conversations.length) {
+      archiveStatus.textContent = state.archiveCourseId
+        ? "No conversations found for this subject."
+        : "No conversations found across subjects yet.";
+      archiveConversationList.innerHTML =
+        "<p class=\"empty-state\">No transcripts match this archive filter.</p>";
+      return;
+    }
+
+    archiveStatus.textContent = `Showing ${conversations.length} recent archive conversation${conversations.length === 1 ? "" : "s"}.`;
+    archiveConversationList.replaceChildren(
+      ...conversations.map((conversation) => renderConversation(conversation))
+    );
+  } catch (error) {
+    archiveStatus.textContent = error.message;
+    archiveConversationList.innerHTML =
+      "<p class=\"empty-state\">Transcript archive could not be loaded.</p>";
+  } finally {
+    archiveRefreshButton.disabled = false;
+    archiveDownloadButton.disabled = false;
+  }
+}
+
+function renderArchiveCourseFilter(selectedCourseId) {
+  if (!archiveCourseFilter) return;
+
+  const currentValue = selectedCourseId || "";
+  archiveCourseFilter.replaceChildren(
+    createArchiveCourseOption("", "All subjects"),
+    ...state.archiveCourses.map((course) =>
+      createArchiveCourseOption(
+        course.courseId,
+        `${course.courseTitle}${course.courseId ? ` (${course.courseId})` : ""} - ${course.conversationCount}`
+      )
+    )
+  );
+  archiveCourseFilter.value = currentValue;
+}
+
+function createArchiveCourseOption(value, label) {
+  const option = document.createElement("option");
+  option.value = value || "";
+  option.textContent = label;
+  return option;
+}
+
+async function downloadTranscriptArchive() {
+  if (!state.canViewAllTranscripts) return;
+
+  archiveDownloadButton.disabled = true;
+  archiveDownloadButton.textContent = "Downloading...";
+  archiveStatus.textContent = "Preparing transcript CSV...";
+
+  try {
+    const params = new URLSearchParams({
+      scope: "all",
+      format: "csv"
+    });
+    if (state.archiveCourseId) params.set("courseId", state.archiveCourseId);
+
+    const response = await fetch(`${API_BASE}/conversations?${params.toString()}`, {
+      headers: authHeaders()
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Transcript download failed.");
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = transcriptFileName();
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    archiveStatus.textContent = "Transcript CSV downloaded.";
+  } catch (error) {
+    archiveStatus.textContent = error.message;
+  } finally {
+    archiveDownloadButton.disabled = false;
+    archiveDownloadButton.textContent = "Download CSV";
+  }
+}
+
+function transcriptFileName() {
+  return state.archiveCourseId
+    ? `iris-transcripts-${state.archiveCourseId.replace(/[^a-z0-9_-]+/gi, "-")}.csv`
+    : "iris-transcripts-all-subjects.csv";
 }
 
 function renderConversation(conversation) {
@@ -592,6 +723,12 @@ moodleFilterBar?.addEventListener("click", (event) => {
   updateMoodleScanStatus();
 });
 conversationRefreshButton.addEventListener("click", loadConversations);
+archiveRefreshButton?.addEventListener("click", loadTranscriptArchive);
+archiveCourseFilter?.addEventListener("change", () => {
+  state.archiveCourseId = archiveCourseFilter.value;
+  loadTranscriptArchive();
+});
+archiveDownloadButton?.addEventListener("click", downloadTranscriptArchive);
 
 function formatDate(value) {
   if (!value) return "unknown date";

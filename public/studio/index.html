@@ -109,6 +109,29 @@
           </p>
           <div class="conversation-list" id="conversationList"></div>
         </section>
+
+        <section class="conversation-panel archive-panel" id="adminArchivePanel" hidden>
+          <div class="section-heading conversation-heading">
+            <div>
+              <p class="eyebrow">Admin Archive</p>
+              <h2>All subject transcripts</h2>
+            </div>
+            <div class="archive-actions">
+              <button class="secondary-button" type="button" id="archiveRefreshButton">Refresh</button>
+              <button class="primary-button" type="button" id="archiveDownloadButton">Download CSV</button>
+            </div>
+          </div>
+          <div class="archive-toolbar">
+            <label for="archiveCourseFilter">Subject filter</label>
+            <select id="archiveCourseFilter" name="archiveCourseFilter">
+              <option value="">All subjects</option>
+            </select>
+          </div>
+          <p class="helper-text" id="archiveStatus">
+            Review and export Moodle-launched Iris conversations across subjects.
+          </p>
+          <div class="conversation-list" id="archiveConversationList"></div>
+        </section>
       </section>
     </main>
 

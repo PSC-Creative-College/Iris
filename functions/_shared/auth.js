@@ -11,6 +11,13 @@ const DEFAULT_LTI_TEACHER_KEYWORDS = [
   "teachingassistant"
 ];
 
+const DEFAULT_TRANSCRIPT_ADMIN_KEYWORDS = [
+  "administrator",
+  "convenor",
+  "convener",
+  "provider administrator"
+];
+
 export async function getTeacher(request, env) {
   const accessEmail =
     request.headers.get("cf-access-authenticated-user-email") ||
@@ -20,7 +27,9 @@ export async function getTeacher(request, env) {
     return {
       ok: true,
       email: accessEmail.toLowerCase(),
-      mode: "cloudflare-access"
+      mode: "cloudflare-access",
+      canViewAllTranscripts: true,
+      roles: ["cloudflare-access"]
     };
   }
 
@@ -34,7 +43,8 @@ export async function getTeacher(request, env) {
       moodleUserId: ltiContext.userId,
       moodleCourseId: ltiContext.courseId,
       courseTitle: ltiContext.courseTitle,
-      roles: ltiContext.roles
+      roles: ltiContext.roles,
+      canViewAllTranscripts: ltiRoleCanViewAllTranscripts(ltiContext.roles, env)
     };
   }
 
@@ -104,4 +114,25 @@ function ltiRoleIsAllowed(roles = [], env) {
     const clean = String(role || "").toLowerCase();
     return allowed.some((keyword) => clean.includes(keyword));
   });
+}
+
+function ltiRoleCanViewAllTranscripts(roles = [], env) {
+  const configured = String(env.TRANSCRIPT_ADMIN_ROLE_KEYWORDS || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  const allowed = configured.length ? configured : DEFAULT_TRANSCRIPT_ADMIN_KEYWORDS;
+
+  return roles.some((role) => {
+    const clean = normalizeRole(role);
+    return allowed.some((keyword) => clean.includes(normalizeRole(keyword)));
+  });
+}
+
+function normalizeRole(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }

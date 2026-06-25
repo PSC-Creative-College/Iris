@@ -20,6 +20,8 @@ export async function onRequestGet({ request, env }) {
     name: teacher.name || teacher.email,
     mode: teacher.mode,
     moodleCourseId: teacher.moodleCourseId,
-    courseTitle: teacher.courseTitle
+    courseTitle: teacher.courseTitle,
+    roles: teacher.roles || [],
+    canViewAllTranscripts: Boolean(teacher.canViewAllTranscripts)
   });
 }

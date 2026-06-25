@@ -267,6 +267,14 @@ Optional LTI teacher-role keywords:
 TEACHER_LTI_ROLE_KEYWORDS=instructor,teacher,teachingassistant,administrator,manager,contentdeveloper
 ```
 
+Optional all-transcript archive role keywords:
+
+```text
+TRANSCRIPT_ADMIN_ROLE_KEYWORDS=convenor,provider administrator,administrator
+```
+
+Teachers stay scoped to the Moodle subject they launched from. Users with one of the archive role keywords can view all subject transcripts, filter by subject, and download a CSV export from Teacher Studio.
+
 Cloudflare Access is still supported as an optional fallback. If you use it, restrict allowed teachers with:
 
 ```text
@@ -351,4 +359,4 @@ Then redeploy the Pages project.
 
 The first LTI version supports resource link launches. It validates Moodle's signed launch token, stores the launch session, displays the Moodle course/student context in the student interface, and logs conversations against the Moodle user/course IDs. Gradebook, deep linking, and names/roles services are intentionally left for a later version.
 
-Teacher Studio uses the same LTI launch but targets `/studio/`. Iris unlocks the teacher tools only if Moodle sends an instructor, teacher, teaching assistant, administrator, manager, or content developer role.
+Teacher Studio uses the same LTI launch but targets `/studio/`. Iris unlocks the teacher tools only if Moodle sends an instructor, teacher, teaching assistant, administrator, manager, or content developer role. Convenor and Provider Administrator roles can also unlock the all-subject transcript archive.
