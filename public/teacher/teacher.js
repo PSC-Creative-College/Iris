@@ -253,12 +253,115 @@ function renderConversationMessage(message) {
     formatDate(message.createdAt)
   ].join(" | ");
 
-  const content = document.createElement("p");
+  const content = document.createElement("div");
   content.className = "conversation-message-content";
-  content.textContent = message.content;
+  content.append(...renderFormattedText(message.content));
 
   row.append(label, content);
   return row;
+}
+
+function renderFormattedText(content) {
+  const blocks = [];
+  const lines = String(content || "").split(/\r?\n/);
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (!line) {
+      index += 1;
+      continue;
+    }
+
+    if (isHeadingLine(line)) {
+      blocks.push(createTextBlock("h4", stripHeadingMarker(line)));
+      index += 1;
+      continue;
+    }
+
+    if (isBulletLine(line)) {
+      const list = document.createElement("ul");
+      while (index < lines.length && isBulletLine(lines[index].trim())) {
+        list.append(createTextBlock("li", lines[index].trim().replace(/^[-*]\s+/, "")));
+        index += 1;
+      }
+      blocks.push(list);
+      continue;
+    }
+
+    if (isNumberedLine(line)) {
+      const list = document.createElement("ol");
+      while (index < lines.length && isNumberedLine(lines[index].trim())) {
+        list.append(createTextBlock("li", lines[index].trim().replace(/^\d+[.)]\s+/, "")));
+        index += 1;
+      }
+      blocks.push(list);
+      continue;
+    }
+
+    const paragraphLines = [];
+    while (index < lines.length) {
+      const current = lines[index].trim();
+      if (!current || isHeadingLine(current) || isBulletLine(current) || isNumberedLine(current)) {
+        break;
+      }
+      paragraphLines.push(current);
+      index += 1;
+    }
+    blocks.push(createTextBlock("p", paragraphLines.join(" ")));
+  }
+
+  return blocks.length ? blocks : [createTextBlock("p", "")];
+}
+
+function createTextBlock(tagName, text) {
+  const element = document.createElement(tagName);
+  element.append(...renderInlineFormatting(text));
+  return element;
+}
+
+function renderInlineFormatting(text) {
+  const parts = [];
+  const pattern = /\*\*([^*]+)\*\*/g;
+  let start = 0;
+  let match;
+
+  while ((match = pattern.exec(text))) {
+    if (match.index > start) {
+      parts.push(document.createTextNode(text.slice(start, match.index)));
+    }
+
+    const strong = document.createElement("strong");
+    strong.textContent = match[1];
+    parts.push(strong);
+    start = pattern.lastIndex;
+  }
+
+  if (start < text.length) {
+    parts.push(document.createTextNode(text.slice(start)));
+  }
+
+  return parts;
+}
+
+function isHeadingLine(line) {
+  return (
+    /^#{1,4}\s+\S/.test(line) ||
+    (/^[A-Z][A-Z0-9\s&:/()-]{3,}$/.test(line) && line.length <= 72) ||
+    (/^[A-Z][^.!?]{2,}:$/.test(line) && line.length <= 72)
+  );
+}
+
+function stripHeadingMarker(line) {
+  return line.replace(/^#{1,4}\s+/, "").replace(/:$/, "");
+}
+
+function isBulletLine(line) {
+  return /^[-*]\s+\S/.test(line);
+}
+
+function isNumberedLine(line) {
+  return /^\d+[.)]\s+\S/.test(line);
 }
 
 async function deleteResource(id, title) {

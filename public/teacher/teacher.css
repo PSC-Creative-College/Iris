@@ -457,9 +457,33 @@ select:focus {
 }
 
 .conversation-message-content {
-  margin: 0;
+  display: grid;
+  gap: 8px;
   line-height: 1.55;
-  white-space: pre-wrap;
+}
+
+.conversation-message-content h4,
+.conversation-message-content p,
+.conversation-message-content ul,
+.conversation-message-content ol {
+  margin: 0;
+}
+
+.conversation-message-content h4 {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.conversation-message-content ul,
+.conversation-message-content ol {
+  display: grid;
+  gap: 4px;
+  padding-left: 22px;
+}
+
+.conversation-message-content strong {
+  font-weight: 850;
 }
 
 @media (max-width: 840px) {
