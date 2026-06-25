@@ -273,7 +273,12 @@ Optional all-transcript archive role keywords:
 TRANSCRIPT_ADMIN_ROLE_KEYWORDS=convenor,provider administrator,administrator
 ```
 
-Teachers stay scoped to the Moodle subject they launched from. Users with one of the archive role keywords can view all subject transcripts, filter by subject, and download a CSV export from Teacher Studio.
+Teachers stay scoped to the Moodle subject they launched from. Users with one of the archive role keywords can view all subject transcripts, filter by subject, and download a CSV export from Teacher Studio. If Moodle does not send local provider roles through LTI, grant archive access to named users instead:
+
+```text
+TRANSCRIPT_ADMIN_EMAILS=teacher1@psc.edu.au,teacher2@psc.edu.au
+TRANSCRIPT_ADMIN_MOODLE_USER_IDS=12345,67890
+```
 
 Cloudflare Access is still supported as an optional fallback. If you use it, restrict allowed teachers with:
 

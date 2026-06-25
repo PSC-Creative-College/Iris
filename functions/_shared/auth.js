@@ -35,6 +35,7 @@ export async function getTeacher(request, env) {
 
   const ltiContext = await getLtiSessionContext(request, env);
   if (ltiContext && ltiRoleIsAllowed(ltiContext.roles, env)) {
+    const archiveAccess = ltiContextCanViewAllTranscripts(ltiContext, env);
     return {
       ok: true,
       email: ltiContext.userEmail || `moodle-user:${ltiContext.userId}`,
@@ -44,7 +45,8 @@ export async function getTeacher(request, env) {
       moodleCourseId: ltiContext.courseId,
       courseTitle: ltiContext.courseTitle,
       roles: ltiContext.roles,
-      canViewAllTranscripts: ltiRoleCanViewAllTranscripts(ltiContext.roles, env)
+      canViewAllTranscripts: archiveAccess.allowed,
+      archiveAccessReason: archiveAccess.reason
     };
   }
 
@@ -121,12 +123,52 @@ function ltiRoleCanViewAllTranscripts(roles = [], env) {
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
-  const allowed = configured.length ? configured : DEFAULT_TRANSCRIPT_ADMIN_KEYWORDS;
+  const allowed = [...new Set([...DEFAULT_TRANSCRIPT_ADMIN_KEYWORDS, ...configured])];
 
   return roles.some((role) => {
     const clean = normalizeRole(role);
     return allowed.some((keyword) => clean.includes(normalizeRole(keyword)));
   });
+}
+
+function ltiContextCanViewAllTranscripts(ltiContext, env) {
+  if (ltiRoleCanViewAllTranscripts(ltiContext.roles, env)) {
+    return { allowed: true, reason: "role" };
+  }
+
+  if (transcriptAdminEmailIsAllowed(ltiContext.userEmail, env)) {
+    return { allowed: true, reason: "email" };
+  }
+
+  if (transcriptAdminMoodleUserIsAllowed(ltiContext.userId, env)) {
+    return { allowed: true, reason: "moodle-user-id" };
+  }
+
+  return { allowed: false, reason: "subject-role" };
+}
+
+function transcriptAdminEmailIsAllowed(email, env) {
+  const clean = String(email || "").trim().toLowerCase();
+  if (!clean) return false;
+
+  const allowed = String(env.TRANSCRIPT_ADMIN_EMAILS || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+
+  return allowed.includes(clean);
+}
+
+function transcriptAdminMoodleUserIsAllowed(userId, env) {
+  const clean = String(userId || "").trim();
+  if (!clean) return false;
+
+  const allowed = String(env.TRANSCRIPT_ADMIN_MOODLE_USER_IDS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return allowed.includes(clean);
 }
 
 function normalizeRole(value) {

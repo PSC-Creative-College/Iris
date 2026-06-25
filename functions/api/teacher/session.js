@@ -19,9 +19,11 @@ export async function onRequestGet({ request, env }) {
     email: teacher.email,
     name: teacher.name || teacher.email,
     mode: teacher.mode,
+    moodleUserId: teacher.moodleUserId || null,
     moodleCourseId: teacher.moodleCourseId,
     courseTitle: teacher.courseTitle,
     roles: teacher.roles || [],
-    canViewAllTranscripts: Boolean(teacher.canViewAllTranscripts)
+    canViewAllTranscripts: Boolean(teacher.canViewAllTranscripts),
+    archiveAccessReason: teacher.archiveAccessReason || null
   });
 }

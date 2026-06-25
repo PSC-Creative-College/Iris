@@ -204,6 +204,13 @@ Convenor and Provider Administrator roles can also unlock the all-subject transc
 TRANSCRIPT_ADMIN_ROLE_KEYWORDS=convenor,provider administrator,administrator
 ```
 
+If Moodle only sends the standard LTI course role, such as Instructor, add the person directly in Cloudflare using either their Moodle email or Moodle user ID:
+
+```text
+TRANSCRIPT_ADMIN_EMAILS=teacher1@psc.edu.au
+TRANSCRIPT_ADMIN_MOODLE_USER_IDS=12345
+```
+
 ## Student Workflow
 
 ```text

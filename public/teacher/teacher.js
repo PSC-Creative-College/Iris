@@ -753,7 +753,32 @@ function formatSignedInNotice(data) {
   const person = data.name || data.email || "Moodle teacher";
   const mode = data.mode === "moodle-lti" ? "Moodle LTI" : data.mode;
   const course = data.courseTitle ? ` for ${data.courseTitle}` : "";
-  return `Signed in as ${person} via ${mode}${course}.`;
+  const archive = data.canViewAllTranscripts
+    ? "All-subject transcript archive enabled."
+    : "All-subject transcript archive not enabled for the Moodle roles received.";
+  const roles = formatRoleSummary(data.roles);
+  const userId = data.moodleUserId ? ` Moodle user ID: ${data.moodleUserId}.` : "";
+  return `Signed in as ${person} via ${mode}${course}. ${archive}${roles}${userId}`;
+}
+
+function formatRoleSummary(roles = []) {
+  const labels = roles.map(formatRoleLabel).filter(Boolean);
+  if (!labels.length) return " Moodle roles: none received.";
+  return ` Moodle roles: ${labels.join(", ")}.`;
+}
+
+function formatRoleLabel(role) {
+  const clean = String(role || "").trim();
+  if (!clean) return "";
+
+  return clean
+    .split(/[\/#]/)
+    .pop()
+    .replace(/^urn:lti:.*:/i, "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function moodleKindLabel(kind) {
