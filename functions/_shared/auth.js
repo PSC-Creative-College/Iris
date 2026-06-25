@@ -24,16 +24,6 @@ export async function getTeacher(request, env) {
     };
   }
 
-  const auth = request.headers.get("authorization") || "";
-  const code = auth.replace(/^Bearer\s+/i, "").trim();
-  if (env.TEACHER_ACCESS_CODE && code && code === env.TEACHER_ACCESS_CODE) {
-    return {
-      ok: true,
-      email: "teacher-code@iris.local",
-      mode: "access-code"
-    };
-  }
-
   const ltiContext = await getLtiSessionContext(request, env);
   if (ltiContext && ltiRoleIsAllowed(ltiContext.roles, env)) {
     return {
@@ -52,7 +42,7 @@ export async function getTeacher(request, env) {
     ok: false,
     status: 401,
     message:
-      "Teacher access is not configured for this request. Launch Teacher Studio from Moodle as a teacher, or use the temporary access code."
+      "Teacher access is not configured for this request. Launch Teacher Studio from Moodle as a teacher."
   };
 }
 

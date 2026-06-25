@@ -1,5 +1,4 @@
 const state = {
-  token: sessionStorage.getItem("irisTeacherAccessCode") || "",
   authenticated: false,
   moodleItems: [],
   moodleFilter: "content",
@@ -10,7 +9,6 @@ const API_BASE = location.pathname.startsWith("/studio") ? "/api/studio" : "/api
 
 const authNotice = document.querySelector("#authNotice");
 const accessPanel = document.querySelector("#accessPanel");
-const accessForm = document.querySelector("#accessForm");
 const studioGrid = document.querySelector("#studioGrid");
 const uploadForm = document.querySelector("#uploadForm");
 const uploadButton = document.querySelector("#uploadButton");
@@ -44,7 +42,7 @@ const MOODLE_FILTER_LABELS = {
 };
 
 function authHeaders() {
-  return state.token ? { Authorization: `Bearer ${state.token}` } : {};
+  return {};
 }
 
 function setNotice(message, type = "warning") {
@@ -450,15 +448,6 @@ async function importSelectedMoodleItems() {
     updateMoodleImportButton();
   }
 }
-
-accessForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const code = new FormData(accessForm).get("accessCode");
-  state.token = String(code || "").trim();
-  if (!state.token) return;
-  sessionStorage.setItem("irisTeacherAccessCode", state.token);
-  await checkSession();
-});
 
 uploadForm.addEventListener("submit", async (event) => {
   event.preventDefault();

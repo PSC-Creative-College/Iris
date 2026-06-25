@@ -8,8 +8,7 @@ export async function onRequestGet({ request, env }) {
       authenticated: false,
       authOptions: {
         moodleLti: true,
-        cloudflareAccess: true,
-        accessCode: Boolean(env.TEACHER_ACCESS_CODE)
+        cloudflareAccess: true
       },
       message: teacher.message
     });

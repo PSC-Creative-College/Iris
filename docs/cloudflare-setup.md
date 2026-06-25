@@ -274,14 +274,6 @@ TEACHER_EMAIL_DOMAIN=psc.edu.au
 TEACHER_EMAIL_ALLOWLIST=teacher1@psc.edu.au,teacher2@psc.edu.au
 ```
 
-For temporary testing before Cloudflare Access is configured, set:
-
-```bash
-wrangler pages secret put TEACHER_ACCESS_CODE --project-name iris
-```
-
-Then redeploy the Pages project. The `/studio/` and `/teacher/` pages will accept that code and store it only in the current browser session.
-
 The upload area accepts `.txt`, `.md`, `.csv`, `.json`, `.docx`, and text-based `.pdf` files under 8 MB. Legacy `.doc` files should be saved as `.docx` first. Scanned or image-only PDFs need OCR before Iris can read them.
 
 ## 9. Allow Moodle To Embed Iris
