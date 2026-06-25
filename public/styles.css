@@ -69,10 +69,14 @@ button {
   height: 48px;
   border: 1px solid rgba(255, 253, 247, 0.4);
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--teal), var(--red));
-  font-family: Georgia, serif;
-  font-size: 28px;
-  line-height: 1;
+  background: var(--surface);
+}
+
+.brand-mark img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
 }
 
 .eyebrow {
