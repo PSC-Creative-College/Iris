@@ -1,7 +1,6 @@
 const AGENTS = {
   assignment: {
     name: "Assignment Guide",
-    type: "Assessment clarity",
     contextTitle: "Assessment support",
     contextCopy:
       "Iris can clarify assignment requirements, translate rubric language, and help plan next steps without writing the work for the student.",
@@ -15,7 +14,6 @@ const AGENTS = {
   },
   technical: {
     name: "Technical Tutor",
-    type: "Studio and workflow",
     contextTitle: "Technical support",
     contextCopy:
       "Iris can help troubleshoot production choices, camera settings, lighting setups, software workflows, and preparation for print or presentation.",
@@ -29,7 +27,6 @@ const AGENTS = {
   },
   critique: {
     name: "Creative Critique",
-    type: "Formative critique",
     contextTitle: "Creative critique",
     contextCopy:
       "Iris can ask critique questions, test intent against audience, and suggest revision paths while keeping final creative judgment with the student.",
@@ -43,7 +40,6 @@ const AGENTS = {
   },
   client: {
     name: "Client Simulator",
-    type: "Pitch practice",
     contextTitle: "Professional practice",
     contextCopy:
       "Iris can role-play a client or creative stakeholder, then give feedback on clarity, confidence, questions, and professional tone.",
@@ -70,7 +66,6 @@ const sendButton = document.querySelector("#sendButton");
 const clearButton = document.querySelector("#clearChat");
 const statusEl = document.querySelector("#serviceStatus");
 const agentNameEl = document.querySelector("#agentName");
-const agentTypeEl = document.querySelector("#agentType");
 const contextTitleEl = document.querySelector("#contextTitle");
 const contextCopyEl = document.querySelector("#contextCopy");
 const promptStackEl = document.querySelector("#promptStack");
@@ -86,7 +81,6 @@ function setStatus(text, busy = false) {
 function renderAgent() {
   const agent = AGENTS[state.agent];
   agentNameEl.textContent = agent.name;
-  agentTypeEl.textContent = agent.type;
   contextTitleEl.textContent = agent.contextTitle;
   contextCopyEl.textContent = agent.contextCopy;
 
