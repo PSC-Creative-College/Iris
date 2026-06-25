@@ -1,7 +1,9 @@
 const state = {
   token: sessionStorage.getItem("irisTeacherAccessCode") || "",
   authenticated: false,
-  moodleItems: []
+  moodleItems: [],
+  moodleFilter: "content",
+  moodleScanContext: null
 };
 
 const API_BASE = location.pathname.startsWith("/studio") ? "/api/studio" : "/api/teacher";
@@ -17,6 +19,7 @@ const moodleAgentKey = document.querySelector("#moodleAgentKey");
 const moodleScanButton = document.querySelector("#moodleScanButton");
 const moodleImportButton = document.querySelector("#moodleImportButton");
 const moodleStatus = document.querySelector("#moodleStatus");
+const moodleFilterBar = document.querySelector("#moodleFilterBar");
 const moodleItemList = document.querySelector("#moodleItemList");
 const conversationRefreshButton = document.querySelector("#conversationRefreshButton");
 const conversationStatus = document.querySelector("#conversationStatus");
@@ -27,6 +30,15 @@ const AGENT_LABELS = {
   brief: "Assignment Guide",
   technical: "Technical Tutor",
   critique: "Creative Critique"
+};
+
+const MOODLE_FILTER_LABELS = {
+  content: "Content",
+  file: "Files",
+  activity: "Activities",
+  link: "Links",
+  section: "Sections",
+  all: "All"
 };
 
 function authHeaders() {
@@ -268,22 +280,27 @@ async function scanMoodleCourse() {
   moodleScanButton.disabled = true;
   moodleImportButton.disabled = true;
   moodleItemList.replaceChildren();
-  setMoodleStatus("Scanning Moodle course...");
+  state.moodleItems = [];
+  state.moodleFilter = "content";
+  state.moodleScanContext = null;
+  updateMoodleFilterBar();
+  setMoodleStatus("Scanning Moodle subject...");
 
   try {
     const data = await api(`${API_BASE}/moodle`);
     state.moodleItems = data.items || [];
+    state.moodleScanContext = {
+      courseId: data.courseId,
+      courseLabel: data.courseName || data.launchedCourseTitle || `course ${data.courseId}`,
+      sourceLabel: data.courseSource === "moodle-lti" ? "Moodle launch" : "configured fallback"
+    };
+    updateMoodleFilterBar();
     renderMoodleItems();
-    const importableCount = state.moodleItems.filter((item) => !item.imported).length;
-    const courseLabel = data.courseName || data.launchedCourseTitle || `course ${data.courseId}`;
-    const sourceLabel = data.courseSource === "moodle-lti"
-      ? "Moodle launch"
-      : "configured fallback";
-    setMoodleStatus(
-      `Found ${state.moodleItems.length} importable items in ${courseLabel} (${data.courseId}, ${sourceLabel}). ${importableCount} not yet imported.`
-    );
+    updateMoodleScanStatus();
   } catch (error) {
     state.moodleItems = [];
+    state.moodleScanContext = null;
+    updateMoodleFilterBar();
     renderMoodleItems();
     setMoodleStatus(error.message);
   } finally {
@@ -300,8 +317,16 @@ function renderMoodleItems() {
     return;
   }
 
+  const visibleItems = filteredMoodleItems();
+  if (!visibleItems.length) {
+    moodleItemList.innerHTML =
+      "<p class=\"empty-state\">No items match this filter.</p>";
+    updateMoodleImportButton();
+    return;
+  }
+
   moodleItemList.replaceChildren(
-    ...state.moodleItems.map((item) => {
+    ...visibleItems.map((item) => {
       const row = document.createElement("article");
       row.className = "moodle-item";
 
@@ -337,6 +362,46 @@ function renderMoodleItems() {
   );
 
   updateMoodleImportButton();
+}
+
+function filteredMoodleItems() {
+  return state.moodleItems.filter((item) => moodleItemMatchesFilter(item, state.moodleFilter));
+}
+
+function moodleItemMatchesFilter(item, filter) {
+  if (filter === "all") return true;
+  if (filter === "content") return item.kind !== "section";
+  return item.kind === filter;
+}
+
+function updateMoodleFilterBar() {
+  if (!moodleFilterBar) return;
+
+  moodleFilterBar.hidden = state.moodleItems.length === 0;
+  moodleFilterBar.querySelectorAll(".filter-button").forEach((button) => {
+    const filter = button.dataset.moodleFilter;
+    const count = state.moodleItems.filter((item) => moodleItemMatchesFilter(item, filter)).length;
+    button.textContent = `${MOODLE_FILTER_LABELS[filter] || filter} (${count})`;
+    button.classList.toggle("is-active", filter === state.moodleFilter);
+    button.disabled = count === 0;
+  });
+}
+
+function updateMoodleScanStatus() {
+  const context = state.moodleScanContext;
+  if (!context) return;
+
+  const visibleItems = filteredMoodleItems();
+  const readyCount = visibleItems.filter((item) => !item.imported).length;
+  const sectionCount = state.moodleItems.filter((item) => item.kind === "section").length;
+  const hiddenSectionNote =
+    state.moodleFilter === "content" && sectionCount > 0
+      ? ` ${sectionCount} section item${sectionCount === 1 ? "" : "s"} hidden by default.`
+      : "";
+
+  setMoodleStatus(
+    `Showing ${visibleItems.length} of ${state.moodleItems.length} items in ${context.courseLabel} (${context.courseId}, ${context.sourceLabel}). ${readyCount} ready to import.${hiddenSectionNote}`
+  );
 }
 
 function selectedMoodleItemIds() {
@@ -424,6 +489,14 @@ uploadForm.addEventListener("submit", async (event) => {
 
 moodleScanButton.addEventListener("click", scanMoodleCourse);
 moodleImportButton.addEventListener("click", importSelectedMoodleItems);
+moodleFilterBar?.addEventListener("click", (event) => {
+  const button = event.target.closest(".filter-button");
+  if (!button || button.disabled) return;
+  state.moodleFilter = button.dataset.moodleFilter || "content";
+  updateMoodleFilterBar();
+  renderMoodleItems();
+  updateMoodleScanStatus();
+});
 conversationRefreshButton.addEventListener("click", loadConversations);
 
 function formatDate(value) {

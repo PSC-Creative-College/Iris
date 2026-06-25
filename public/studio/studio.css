@@ -259,6 +259,45 @@ select:focus {
   font-size: 14px;
 }
 
+.moodle-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.moodle-filter-bar[hidden] {
+  display: none;
+}
+
+.filter-button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.filter-button:hover,
+.filter-button:focus-visible {
+  border-color: var(--teal);
+  outline: none;
+}
+
+.filter-button.is-active {
+  border-color: #a8ccc6;
+  background: #eef7f4;
+  color: #225653;
+}
+
+.filter-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .moodle-toolbar {
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(180px, 260px) auto auto;

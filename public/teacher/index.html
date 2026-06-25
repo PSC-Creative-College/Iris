@@ -53,13 +53,21 @@
               <option value="technical">Technical Tutor</option>
               <option value="critique">Creative Critique</option>
             </select>
-            <button class="secondary-button" type="button" id="moodleScanButton">Scan course</button>
+            <button class="secondary-button" type="button" id="moodleScanButton">Scan subject</button>
             <button class="primary-button" type="button" id="moodleImportButton" disabled>Import selected</button>
           </div>
 
           <p class="helper-text" id="moodleStatus">
-            Scan the trial Moodle course, then choose the materials Iris should use.
+            Scan the Moodle subject, then choose the materials Iris should use.
           </p>
+          <div class="moodle-filter-bar" id="moodleFilterBar" aria-label="Filter Moodle materials" hidden>
+            <button class="filter-button is-active" type="button" data-moodle-filter="content">Content</button>
+            <button class="filter-button" type="button" data-moodle-filter="file">Files</button>
+            <button class="filter-button" type="button" data-moodle-filter="activity">Activities</button>
+            <button class="filter-button" type="button" data-moodle-filter="link">Links</button>
+            <button class="filter-button" type="button" data-moodle-filter="section">Sections</button>
+            <button class="filter-button" type="button" data-moodle-filter="all">All</button>
+          </div>
           <div class="moodle-list" id="moodleItemList"></div>
         </section>
 
