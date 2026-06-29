@@ -1,9 +1,6 @@
 const AGENTS = {
   assignment: {
     name: "Assignment Guide",
-    contextTitle: "Assessment support",
-    contextCopy:
-      "Iris can clarify assignment requirements, translate rubric language, and help plan next steps without writing the work for the student.",
     prompts: [
       "What does this assignment mean by visual coherence?",
       "Help me turn this rubric into a project checklist.",
@@ -14,9 +11,6 @@ const AGENTS = {
   },
   technical: {
     name: "Technical Tutor",
-    contextTitle: "Technical support",
-    contextCopy:
-      "Iris can help troubleshoot production choices, camera settings, lighting setups, software workflows, and preparation for print or presentation.",
     prompts: [
       "Why are my studio portraits underexposed?",
       "How should I think about aperture for this shoot?",
@@ -27,9 +21,6 @@ const AGENTS = {
   },
   critique: {
     name: "Creative Critique",
-    contextTitle: "Creative critique",
-    contextCopy:
-      "Iris can ask critique questions, test intent against audience, and suggest revision paths while keeping final creative judgment with the student.",
     prompts: [
       "Ask me critique questions about my portfolio sequence.",
       "How can I make my concept clearer?",
@@ -40,9 +31,6 @@ const AGENTS = {
   },
   client: {
     name: "Client Simulator",
-    contextTitle: "Professional practice",
-    contextCopy:
-      "Iris can role-play a client or creative stakeholder, then give feedback on clarity, confidence, questions, and professional tone.",
     prompts: [
       "Act as a client who is unsure about my concept.",
       "Challenge my pitch so I can practise defending it.",
@@ -56,7 +44,9 @@ const AGENTS = {
 const state = {
   agent: "assignment",
   conversationId: crypto.randomUUID(),
-  history: []
+  history: [],
+  placeholderIndex: 0,
+  placeholderTimer: null
 };
 
 const messagesEl = document.querySelector("#messages");
@@ -66,12 +56,11 @@ const sendButton = document.querySelector("#sendButton");
 const clearButton = document.querySelector("#clearChat");
 const statusEl = document.querySelector("#serviceStatus");
 const agentNameEl = document.querySelector("#agentName");
-const contextTitleEl = document.querySelector("#contextTitle");
-const contextCopyEl = document.querySelector("#contextCopy");
-const promptStackEl = document.querySelector("#promptStack");
 const moodleContextEl = document.querySelector("#moodleContext");
 const moodleCourseEl = document.querySelector("#moodleCourse");
 const moodleUserEl = document.querySelector("#moodleUser");
+
+const DEFAULT_PLACEHOLDER = "Ask Iris about your assignment, concept, process, or technical problem.";
 
 function setStatus(text, busy = false) {
   statusEl.textContent = text;
@@ -81,26 +70,31 @@ function setStatus(text, busy = false) {
 function renderAgent() {
   const agent = AGENTS[state.agent];
   agentNameEl.textContent = agent.name;
-  contextTitleEl.textContent = agent.contextTitle;
-  contextCopyEl.textContent = agent.contextCopy;
+  state.placeholderIndex = 0;
+  startPlaceholderCycle();
 
   document.querySelectorAll(".agent-button").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.agent === state.agent);
   });
+}
 
-  promptStackEl.replaceChildren(
-    ...agent.prompts.map((prompt) => {
-      const button = document.createElement("button");
-      button.className = "prompt-button";
-      button.type = "button";
-      button.textContent = prompt;
-      button.addEventListener("click", () => {
-        input.value = prompt;
-        input.focus();
-      });
-      return button;
-    })
-  );
+function startPlaceholderCycle() {
+  window.clearInterval(state.placeholderTimer);
+  updatePromptPlaceholder();
+  state.placeholderTimer = window.setInterval(() => {
+    if (input.value.trim()) return;
+    const prompts = AGENTS[state.agent].prompts || [];
+    state.placeholderIndex = prompts.length
+      ? (state.placeholderIndex + 1) % prompts.length
+      : 0;
+    updatePromptPlaceholder();
+  }, 5500);
+}
+
+function updatePromptPlaceholder() {
+  const prompts = AGENTS[state.agent].prompts || [];
+  const prompt = prompts[state.placeholderIndex] || DEFAULT_PLACEHOLDER;
+  input.placeholder = prompt;
 }
 
 function appendMessage(role, content, label) {

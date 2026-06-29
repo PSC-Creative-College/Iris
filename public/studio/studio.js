@@ -95,7 +95,7 @@ async function checkSession() {
     if (data.authenticated) {
       state.authenticated = true;
       state.canViewAllTranscripts = Boolean(data.canViewAllTranscripts);
-      accessPanel.hidden = true;
+      if (accessPanel) accessPanel.hidden = true;
       studioGrid.hidden = false;
       if (adminArchivePanel) {
         adminArchivePanel.hidden = !state.canViewAllTranscripts;
@@ -109,14 +109,14 @@ async function checkSession() {
 
     state.authenticated = false;
     state.canViewAllTranscripts = false;
-    accessPanel.hidden = false;
+    if (accessPanel) accessPanel.hidden = false;
     studioGrid.hidden = true;
     if (adminArchivePanel) adminArchivePanel.hidden = true;
     setNotice(data.message || "Teacher login is required.", "warning");
   } catch (error) {
     state.authenticated = false;
     state.canViewAllTranscripts = false;
-    accessPanel.hidden = false;
+    if (accessPanel) accessPanel.hidden = false;
     studioGrid.hidden = true;
     if (adminArchivePanel) adminArchivePanel.hidden = true;
     setNotice(error.message, "error");

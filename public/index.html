@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iris | PSC AI Studio</title>
     <meta name="description" content="Iris is PSC Creative College's AI studio for creative learning.">
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles.css?v=20260629-ui-cleanup">
   </head>
   <body>
     <div class="app-shell">
@@ -28,6 +28,14 @@
             <span>Technical Tutor</span>
           </button>
         </nav>
+
+        <section class="rail-section" id="moodleContext" hidden>
+          <p class="eyebrow">Course</p>
+          <h2 id="moodleCourse">Course context</h2>
+          <p id="moodleUser">Signed in from Moodle.</p>
+        </section>
+
+        <a class="rail-link-button" href="/studio/">Open Teacher Studio</a>
       </aside>
 
       <main class="chat-workspace">
@@ -56,32 +64,8 @@
           </div>
         </form>
       </main>
-
-      <aside class="context-panel" aria-label="Course context">
-        <section class="context-section">
-          <p class="eyebrow">Current mode</p>
-          <h3 id="contextTitle">Assessment support</h3>
-          <p id="contextCopy">Iris can clarify assignment requirements, translate rubric language, and help plan next steps without writing the work for the student.</p>
-        </section>
-
-        <section class="context-section">
-          <p class="eyebrow">Try</p>
-          <div class="prompt-stack" id="promptStack"></div>
-        </section>
-
-        <section class="context-section" id="moodleContext" hidden>
-          <p class="eyebrow">Moodle launch</p>
-          <h3 id="moodleCourse">Course context</h3>
-          <p id="moodleUser">Signed in from Moodle.</p>
-        </section>
-
-        <section class="context-section">
-          <p class="eyebrow">Staff</p>
-          <p><a class="teacher-link" href="/studio/">Open Teacher Studio</a></p>
-        </section>
-      </aside>
     </div>
 
-    <script src="/app.js" defer></script>
+    <script src="/app.js?v=20260629-ui-cleanup" defer></script>
   </body>
 </html>

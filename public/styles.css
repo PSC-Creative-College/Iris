@@ -41,7 +41,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -88,8 +88,7 @@ button {
 }
 
 .brand-block .eyebrow,
-.workspace-header .eyebrow,
-.context-section .eyebrow {
+.workspace-header .eyebrow {
   color: var(--teal);
 }
 
@@ -157,6 +156,49 @@ h3 {
 
 .agent-button span {
   font-weight: 800;
+}
+
+.rail-section {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid rgba(255, 253, 247, 0.16);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 247, 0.06);
+}
+
+.rail-section h2 {
+  color: var(--surface);
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.rail-section p:not(.eyebrow) {
+  margin: 0;
+  color: rgba(255, 253, 247, 0.72);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rail-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 253, 247, 0.28);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 850;
+  text-align: center;
+  text-decoration: none;
+}
+
+.rail-link-button:hover,
+.rail-link-button:focus-visible {
+  border-color: var(--brass);
+  outline: none;
 }
 
 .chat-workspace {
@@ -319,8 +361,7 @@ textarea:focus {
 }
 
 .primary-button,
-.secondary-button,
-.prompt-button {
+.secondary-button {
   min-height: 42px;
   border-radius: var(--radius);
   font-weight: 800;
@@ -344,8 +385,7 @@ textarea:focus {
   opacity: 0.62;
 }
 
-.secondary-button,
-.prompt-button {
+.secondary-button {
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
@@ -355,52 +395,10 @@ textarea:focus {
   min-width: 82px;
 }
 
-.prompt-button {
-  width: 100%;
-  padding: 10px 12px;
-  text-align: left;
-  line-height: 1.35;
-}
-
-.prompt-button:hover,
-.prompt-button:focus-visible,
 .secondary-button:hover,
 .secondary-button:focus-visible {
   border-color: var(--teal);
   outline: none;
-}
-
-.context-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 24px;
-  border-left: 1px solid var(--line);
-  background: #faf7ef;
-}
-
-.context-section {
-  padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: rgba(255, 253, 247, 0.72);
-}
-
-.context-section p {
-  margin: 8px 0 0;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-.prompt-stack {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.teacher-link {
-  color: var(--teal-dark);
-  font-weight: 800;
 }
 
 .visually-hidden {
@@ -418,14 +416,6 @@ textarea:focus {
 @media (max-width: 1120px) {
   .app-shell {
     grid-template-columns: 240px minmax(0, 1fr);
-  }
-
-  .context-panel {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-left: 0;
-    border-top: 1px solid var(--line);
   }
 }
 
@@ -448,8 +438,7 @@ textarea:focus {
 
   .workspace-header,
   .composer,
-  .message-panel,
-  .context-panel {
+  .message-panel {
     padding-left: 18px;
     padding-right: 18px;
   }
@@ -459,8 +448,9 @@ textarea:focus {
     flex-direction: column;
   }
 
-  .context-panel {
-    grid-template-columns: 1fr;
+  .rail-section,
+  .rail-link-button {
+    width: 100%;
   }
 }
 
